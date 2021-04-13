@@ -1,0 +1,240 @@
+.container-fluid {
+    /*Take full page*/
+    display:flex;
+    flex-direction: column;
+    height: 100vh;
+    /*overflow:hidden;*/
+}
+
+/*Various classes allow scrolling of the left column*/
+/*Top padding to compensate for fixed nav*/
+.left-fixed, .right-fixed {
+    margin-top:50px;
+}
+
+
+@media only screen and (min-width: 1202px) {
+
+    .right-fixed {
+        position:fixed;
+        right:0;
+    }
+
+    .tab-fixed {
+        position:fixed;
+        left: 0;
+        top:50px;
+        z-index:3;
+        width:25%;
+    }
+
+    /*Top padding to compensate for fixed nav*/
+    .left-fixed {
+        margin-top:95px;
+    }
+}
+
+/*Tabs*/
+.nav {
+    padding-top: 15px;
+    background-color:white;
+    border:solid;
+    border-width: 0 0 1px 0;
+    color: white;
+}
+
+.nav-item, .nav .active, #dropdown-basic-button {
+    flex-grow:1;
+    text-align:center;
+    background-color: #6c757d;
+    border-radius: 10px 10px 0 0;
+    height:30px;
+    font-size:12px;
+}
+
+.side-border {
+    border:solid;
+    border-width: 0 0 0 2px;
+    color:white;
+}
+
+.nav-link {
+    /*color: #343a40;*/
+    color:white;
+}
+
+.nav-link:hover {
+    color: #343a40;
+    text-decoration:underline;
+}
+.nav .active{
+    font-weight:bold;
+    color:white;
+    background-color:#343a40;
+}
+
+.mainTitle {
+    margin-right: 10px;
+    display:inline;
+}
+
+.mainLogo, .help {
+    margin-top: -5px;
+}
+
+.help {
+    cursor:pointer;
+}
+
+/* Buttons */
+.left-button {
+    position:absolute;
+    left: 20px;
+    top: 12px;
+    font-size: 10px;
+}
+
+.right-button {
+    position:absolute;
+    right: 20px;
+    top: 16px;
+}
+
+.rounded-circle {
+    border-radius:50%;
+    padding:0;
+    width:15px;
+    font-size: 9px;
+}
+
+.nav .active:hover {
+    color:white;
+}
+/*Select buttons*/
+.btn-outline-secondary {
+    padding:2px;
+    font-size:10px;
+    color:white;
+    font-family:"Courier";
+    text-overflow:ellipsis;
+    overflow:hidden;
+    border-width:1px;
+    margin-top:-1px;
+    border-left:0;
+}
+
+.btn.btn-outline-secondary:hover {
+    background-color:transparent;
+}
+
+.btn:focus,.btn:active {
+    outline: none !important;
+    box-shadow: none;
+}
+
+.parent-btn {
+    border:solid;
+    color:#6c757d;
+    border-width:0 0 0 1px;
+}
+
+/*Hover*/
+.btn.btn-outline-secondary:hover, .btn.btn-outline-secondary.active:hover {
+    font-weight:bold;
+    border-color:white;
+    z-index:3;
+    border:solid;
+    border-width: 1px;
+}
+
+/*Buttons width*/
+.btn-double {
+    width:50%;
+}
+
+/*Responsive design*/
+@media only screen and (max-width: 767px) {
+    .btn-grid {
+        width:16.66%;
+    }
+}
+
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+    .btn-grid {
+        width:33.33%;
+    }
+}
+
+@media only screen and (min-width: 768px) and (max-width: 1200px) {
+    /*Collapse nav*/
+    .nav-item, .nav .active, #dropdown-basic-button, #presetListParent {
+        width:100%;
+        border-radius:0;
+    }
+
+    .top-tab, .top-tab .active{
+        border-radius:10px 10px 0 0;
+    }
+
+    .side-border {
+        border-width:0;
+    }
+}
+
+@media only screen and (min-width: 992px) {
+    .btn-grid {
+        width: 25%;
+    }
+}
+
+@media only screen and (min-width: 1200px) {
+    .btn-grid {
+        width:16.66%;
+    }
+}
+
+/* Warning message */
+.warning-message {
+    font-size:10px;
+    color:white;
+    margin-bottom: 20px;
+    text-align:justify;
+}
+
+/*Utilities*/
+.white {
+    color:white;
+}
+
+.cap {
+    text-transform:capitalize;
+}
+
+.bold {
+    font-weight:bold;
+}
+
+.w-25 {
+    width:25%;
+}
+
+.underline {
+    text-decoration:underline;
+}
+
+.mt20 {
+    margin-top:20px;
+}
+
+.d-none {
+    display:none;
+}
+
+.p-0 {
+    padding:0;
+}
+
+.m-0 {
+    margin:0;
+}
+
