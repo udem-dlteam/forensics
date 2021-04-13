@@ -1,0 +1,8 @@
+# This script checks if the commit $COMMIT should be included in
+# the forensics report.
+#
+#   echo "0"     to skip this commit
+#   echo "1"     to include this commit
+#   echo ""      or other output or exiting with error to stop checking
+
+echo "1"

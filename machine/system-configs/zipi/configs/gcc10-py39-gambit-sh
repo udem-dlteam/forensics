@@ -1,0 +1,12 @@
+PATH=\
+$FORENSICS_DIR/compilers/gcc-10.2.0/bin:\
+$FORENSICS_DIR/compilers/gambit-v4.9.3-1352/bin:\
+$FORENSICS_DIR/compilers/bigloo-4.4b/bin:\
+$FORENSICS_DIR/compilers/cpython-3.9.0/bin:\
+$PATH
+
+BUILDPYTHON="python3.9"
+
+BRANCH="master"
+
+CONFIGURE_OPTIONS="--buildpython=$BUILDPYTHON --gambit-only"

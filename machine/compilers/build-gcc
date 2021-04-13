@@ -1,0 +1,284 @@
+#! /bin/bash
+
+# File: "build-gcc"
+
+# Usage: ./build-gcc gcc-8.2.0
+#
+# to build the highest available version:
+#
+# Usage: ./build-gcc
+
+GCC_FTP_URL="ftp://ftp.gnu.org/gnu/gcc/"
+GMP_FTP_URL="ftp://ftp.gnu.org/gnu/gmp/"
+MPFR_FTP_URL="ftp://ftp.gnu.org/gnu/mpfr/"
+MPC_FTP_URL="ftp://ftp.gnu.org/gnu/mpc/"
+
+
+ERROR_MESSAGE=""
+
+
+fail_with_message()
+{
+  ERROR_MESSAGE="*** [$GCC_VERSION] build failed: $1"
+}
+
+
+get_available_parallelism()
+{
+  # This works on linux:
+  AVAILABLE_PARALLELISM="`nproc 2> /dev/null`"
+
+  if [ "$AVAILABLE_PARALLELISM" == "" ] ; then
+
+    # This works on macOS:
+    AVAILABLE_PARALLELISM="`sysctl -n hw.ncpu 2> /dev/null`"
+
+    if [ "$AVAILABLE_PARALLELISM" == "" ] ; then
+      # Just assume we have one processing unit
+      AVAILABLE_PARALLELISM="1"
+    fi
+
+  fi
+}
+
+get_available_parallelism
+
+MAKE_PARALLELISM="-j$AVAILABLE_PARALLELISM"
+
+
+file_exists()
+{
+  if [ ! -e "$1" ] ; then
+    return 1
+  fi
+}
+
+
+get_highest_version()
+{
+  FTP_URL="$1"
+  PREFIX="$2"
+  SUFFIX="$3"
+
+  if ! ( curl "$FTP_URL" -l 2> /dev/null | grep "^$PREFIX[0-9]*\.[0-9]*\.[0-9]$SUFFIX\$" > available-versions ) ; then
+
+    rm -f available-versions
+    return 1
+
+  fi
+
+  if [ "$SUFFIX" == "" ] ; then
+    SUFFIX="non-empty-suffix"
+  fi
+
+  HIGHEST_VERSION=""
+  HIGHEST_MAJ="0"
+  HIGHEST_MIN="0"
+  HIGHEST_REV="0"
+
+  while read version ; do
+
+    maj=`echo $version | sed -e "s/$PREFIX//g" -e "s/\.[^.]*\.[^.]*//g"`
+    min=`echo $version | sed -e "s/$PREFIX[^.]*\.//g" -e "s/\.[^.]*//g"`
+    rev=`echo $version | sed -e "s/$PREFIX[^.]*\.[^.]*\.//g" -e "s/$SUFFIX//g"`
+
+    if [ \( "$maj" -gt "$HIGHEST_MAJ" \) -o \( \( "$maj" -eq "$HIGHEST_MAJ" \) -a \( \( "$min" -gt "$HIGHEST_MIN" \) -o \( \( "$min" -eq "$HIGHEST_MIN" \) -a \( "$rev" -gt "$HIGHEST_REV" \) \) \) \) ] ; then
+
+      HIGHEST_VERSION=`echo $version | sed -e "s/$SUFFIX//g"`
+      HIGHEST_MAJ="$maj"
+      HIGHEST_MIN="$min"
+      HIGHEST_REV="$rev"
+
+    fi
+
+  done < available-versions
+
+  rm -f available-versions
+}
+
+
+get_gcc_version()
+{
+  if [ "$GCC_VERSION" == "" ] ; then
+
+    if ! get_highest_version "$GCC_FTP_URL" "gcc-" "" ; then
+      return 1
+    fi
+
+    GCC_VERSION="$HIGHEST_VERSION"
+
+  fi
+}
+
+
+get_other_versions()
+{
+  if [ "$GMP_VERSION" == "" ] ; then
+
+    if ! get_highest_version "$GMP_FTP_URL" "gmp-" "\\.tar\\.gz" ; then
+      return 1
+    fi
+
+    GMP_VERSION="$HIGHEST_VERSION"
+
+  fi
+
+  if [ "$MPFR_VERSION" == "" ] ; then
+
+    if ! get_highest_version "$MPFR_FTP_URL" "mpfr-" "\\.tar\\.gz" ; then
+      return 1
+    fi
+
+    MPFR_VERSION="$HIGHEST_VERSION"
+
+  fi
+
+  if [ "$MPC_VERSION" == "" ] ; then
+
+    if ! get_highest_version "$MPC_FTP_URL" "mpc-" "\\.tar\\.gz" ; then
+      return 1
+    fi
+
+    MPC_VERSION="$HIGHEST_VERSION"
+
+  fi
+}
+
+
+download_all()
+{
+  echo "Downloading:"
+  echo "  $GCC_VERSION"
+  echo "  $GMP_VERSION"
+  echo "  $MPFR_VERSION"
+  echo "  $MPC_VERSION"
+
+  if ! curl "$GCC_FTP_URL$GCC_VERSION/$GCC_VERSION.tar.gz" > "$GCC_VERSION.tar.gz" 2> /dev/null ; then
+    rm -f "$GCC_VERSION.tar.gz"
+    return 1
+  fi
+
+  if ! curl "$GMP_FTP_URL$GMP_VERSION.tar.gz" > "$GMP_VERSION.tar.gz" 2> /dev/null ; then
+    rm -f "$GCC_VERSION.tar.gz" "$GMP_VERSION.tar.gz"
+    return 1
+  fi
+
+  if ! curl "$MPFR_FTP_URL$MPFR_VERSION.tar.gz" > "$MPFR_VERSION.tar.gz" 2> /dev/null ; then
+    rm -f "$GCC_VERSION.tar.gz" "$GMP_VERSION.tar.gz" "$MPFR_VERSION.tar.gz"
+    return 1
+  fi
+
+  if ! curl "$MPC_FTP_URL$MPC_VERSION.tar.gz" > "$MPC_VERSION.tar.gz" 2> /dev/null ; then
+    rm -f "$GCC_VERSION.tar.gz" "$GMP_VERSION.tar.gz" "$MPFR_VERSION.tar.gz" "$MPC_VERSION.tar.gz"
+    return 1
+  fi
+}
+
+
+build_all()
+{
+  if ! tar zxf "$GCC_VERSION.tar.gz" ; then
+    return 1
+  fi
+
+  mv "$GCC_VERSION" "$GCC_VERSION-sources"
+
+  cd "$GCC_VERSION-sources"
+
+  if ! tar zxf "../$GMP_VERSION.tar.gz" ; then
+    cd ..
+    return 1
+  fi
+
+  if ! tar zxf "../$MPFR_VERSION.tar.gz" ; then
+    cd ..
+    return 1
+  fi
+
+  if ! tar zxf "../$MPC_VERSION.tar.gz" ; then
+    cd ..
+    return 1
+  fi
+
+  mv "$GMP_VERSION"  gmp
+  mv "$MPFR_VERSION" mpfr
+  mv "$MPC_VERSION"  mpc
+
+  cd ..
+
+  mkdir "$GCC_VERSION-build"
+
+  cd "$GCC_VERSION-build"
+
+  if ! ( "../$GCC_VERSION-sources/configure" --prefix="$INSTALL_PREFIX" --disable-multilib && time make $MAKE_PARALLELISM bootstrap && make install ) ; then
+    rm -rf "$INSTALL_PREFIX"
+    cd ..
+    return 1
+  fi
+
+  cd ..
+
+  # save sources and build directories just in case
+
+  mv "$GCC_VERSION-build" "$INSTALL_PREFIX/$GCC_VERSION-build"
+  mv "$GCC_VERSION-sources" "$INSTALL_PREFIX/$GCC_VERSION-sources"
+}
+
+
+check()
+{
+  if ! get_gcc_version ; then
+    return 1
+  fi
+
+  INSTALL_PREFIX="$INSTALL_ROOT/$GCC_VERSION"
+
+  if file_exists "$INSTALL_PREFIX" ; then
+    return 0
+  fi
+
+  echo "*** [$GCC_VERSION] starting build"
+
+  if ! get_other_versions ; then
+    return 1
+  fi
+
+  if ! download_all ; then
+    return 1
+  fi
+
+  if ! build_all ; then
+    return 1
+  fi
+}
+
+
+main()
+{
+  INSTALL_ROOT="`pwd`"
+
+  mkdir ".temp-$$"
+
+  cd ".temp-$$"
+
+  if ! check ; then
+
+    rm -rf ".temp-$$"
+    return 1
+
+  fi
+
+  cd ..
+
+  rm -rf ".temp-$$"
+}
+
+
+GCC_VERSION="$1"
+
+if ! main ; then
+  echo "$ERROR_MESSAGE"
+  exit 1
+fi
+
+echo "*** [$GCC_VERSION] build succeeded"

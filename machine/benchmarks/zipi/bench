@@ -1,0 +1,20 @@
+#! /bin/sh
+
+# Usage:
+#   ./bench zipi
+#   ./bench python3.9
+#   ./bench pypy3
+
+SYSTEM="$1"
+
+cd src
+
+for b in *.py ; do
+
+  NAME="`echo \"$b\" | sed -e 's/.py\$//'`"
+
+  if ! ( $SYSTEM "$NAME.py" | grep " seconds[ :]" | sed -e "s@ .*@@g" -e "s@^@+\!CSVLINE\!+,$NAME,@" ) ; then
+    echo "+\!CSVLINE\!+,$NAME,CRASHED"
+  fi
+
+done

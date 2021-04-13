@@ -1,0 +1,25 @@
+EXTRA_CONFIGURE_OPTIONS=""
+
+if git rev-list "$COMMIT" | grep $(git rev-parse "27fb40778f76bfabc954f6c064b524bdf18d0a72") ; then
+  # the configure option --enable-targets=... exists
+  EXTRA_CONFIGURE_OPTIONS="$EXTRA_CONFIGURE_OPTIONS --enable-targets=js"
+fi
+
+HAVE_MAKE_MODULES="no"
+
+if git rev-list "$COMMIT" | grep $(git rev-parse "c3e9dafd5757b60baee06ac0cd1e1ebdb30c6fc2") ; then
+  # makefiles support "make modules"
+  HAVE_MAKE_MODULES="yes"
+fi
+
+./configure $CONFIGURE_OPTIONS $EXTRA_CONFIGURE_OPTIONS --prefix="$INSTALL_DIR"
+
+make $MAKE_JOBS
+
+if [ "$HAVE_MAKE_MODULES" == "yes" ] ; then
+  make $MAKE_JOBS modules
+fi
+
+make check
+
+make install

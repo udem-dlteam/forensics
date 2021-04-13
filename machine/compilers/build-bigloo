@@ -1,0 +1,200 @@
+#! /bin/bash
+
+# File: "build-bigloo"
+
+# Usage: ./build-bigloo bigloo-4.4b
+#
+# to build the highest available version:
+#
+# Usage: ./build-bigloo
+
+BIGLOO_FTP_URL="ftp://ftp-sop.inria.fr/indes/fp/Bigloo/"
+
+
+ERROR_MESSAGE=""
+
+
+fail_with_message()
+{
+  ERROR_MESSAGE="*** [$BIGLOO_VERSION] build failed: $1"
+}
+
+
+get_available_parallelism()
+{
+  # This works on linux:
+  AVAILABLE_PARALLELISM="`nproc 2> /dev/null`"
+
+  if [ "$AVAILABLE_PARALLELISM" == "" ] ; then
+
+    # This works on macOS:
+    AVAILABLE_PARALLELISM="`sysctl -n hw.ncpu 2> /dev/null`"
+
+    if [ "$AVAILABLE_PARALLELISM" == "" ] ; then
+      # Just assume we have one processing unit
+      AVAILABLE_PARALLELISM="1"
+    fi
+
+  fi
+}
+
+get_available_parallelism
+
+MAKE_PARALLELISM="-j$AVAILABLE_PARALLELISM"
+
+
+file_exists()
+{
+  if [ ! -e "$1" ] ; then
+    return 1
+  fi
+}
+
+
+get_highest_version()
+{
+  FTP_URL="$1"
+  PREFIX="$2"
+  SUFFIX="$3"
+
+  if ! ( curl "$FTP_URL" -l 2> /dev/null | grep "^$PREFIX[0-9]*\.[0-9]*[-a-z0-9]*$SUFFIX\$" > available-versions ) ; then
+
+    rm -f available-versions
+    return 1
+
+  fi
+
+  if [ "$SUFFIX" == "" ] ; then
+    SUFFIX="non-empty-suffix"
+  fi
+
+  HIGHEST_VERSION=""
+  HIGHEST_MAJ="0"
+  HIGHEST_MIN="0"
+  HIGHEST_REV=""
+
+  while read version ; do
+
+    maj=`echo $version | sed -e "s/$PREFIX//g" -e "s/\..*//g"`
+    min=`echo $version | sed -e "s/$PREFIX[^.]*\.//g" -e "s/[a-z.].*//g"`
+    rev=`echo $version | sed -e "s/$PREFIX[^.]*\.[0-9]*//g" -e "s/$SUFFIX//g"`
+
+    if [ \( "$maj" -gt "$HIGHEST_MAJ" \) -o \( \( "$maj" -eq "$HIGHEST_MAJ" \) -a \( \( "$min" -gt "$HIGHEST_MIN" \) -o \( \( "$min" -eq "$HIGHEST_MIN" \) -a \( "$rev" \> "$HIGHEST_REV" \) \) \) \) ] ; then
+
+      HIGHEST_VERSION=`echo $version | sed -e "s/$SUFFIX//g"`
+      HIGHEST_MAJ="$maj"
+      HIGHEST_MIN="$min"
+      HIGHEST_REV="$rev"
+
+    fi
+
+  done < available-versions
+
+  rm -f available-versions
+}
+
+
+get_bigloo_version()
+{
+  if [ "$BIGLOO_VERSION" == "" ] ; then
+
+    if ! get_highest_version "$BIGLOO_FTP_URL" "bigloo-*" "\\.tar\\.gz" ; then
+      return 1
+    fi
+
+    BIGLOO_VERSION="$HIGHEST_VERSION"
+
+  fi
+}
+
+
+download_all()
+{
+  echo "Downloading:"
+  echo "  $BIGLOO_VERSION"
+
+  if ! curl "$BIGLOO_FTP_URL/$BIGLOO_VERSION.tar.gz" > "$BIGLOO_VERSION.tar.gz" 2> /dev/null ; then
+    rm -f "$BIGLOO_VERSION.tar.gz"
+    return 1
+  fi
+}
+
+
+build_all()
+{
+  if ! tar zxf "$BIGLOO_VERSION.tar.gz" ; then
+    return 1
+  fi
+
+  mv "$BIGLOO_VERSION" "$BIGLOO_VERSION-build"
+
+  cd "$BIGLOO_VERSION-build"
+
+  if ! ( ./configure --prefix="$INSTALL_PREFIX" && time make $MAKE_PARALLELISM && make install ) ; then
+echo error
+    rm -rf "$INSTALL_PREFIX"
+    cd ..
+    return 1
+  fi
+
+  cd ..
+
+  # save sources and build directories just in case
+
+  mv "$BIGLOO_VERSION-build" "$INSTALL_PREFIX/$BIGLOO_VERSION-build"
+}
+
+
+check()
+{
+  if ! get_bigloo_version ; then
+    return 1
+  fi
+
+  INSTALL_PREFIX="$INSTALL_ROOT/$BIGLOO_VERSION"
+
+  if file_exists "$INSTALL_PREFIX" ; then
+    return 0
+  fi
+
+  echo "*** [$BIGLOO_VERSION] starting build"
+
+  if ! download_all ; then
+    return 1
+  fi
+
+  if ! build_all ; then
+    return 1
+  fi
+}
+
+
+main()
+{
+  INSTALL_ROOT="`pwd`"
+
+  mkdir ".temp-$$"
+
+  cd ".temp-$$"
+
+  if ! check ; then
+
+    rm -rf ".temp-$$"
+    return 1
+
+  fi
+
+  cd ..
+
+  rm -rf ".temp-$$"
+}
+
+
+BIGLOO_VERSION="$1"
+
+if ! main ; then
+  echo "$ERROR_MESSAGE"
+  exit 1
+fi
+
+echo "*** [$BIGLOO_VERSION] build succeeded"

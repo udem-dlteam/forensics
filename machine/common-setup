@@ -1,0 +1,35 @@
+# File: common-setup
+
+# This file contains environment variable settings that are used by
+# all the shell scripts.
+
+FORENSICS_DIR="`pwd`"
+
+# Define the PATH to find gcc and related tools (it is best to build a
+# specific version of gcc with: "cd compilers;./build-gcc gcc-10.2.0").
+
+PATH="$FORENSICS_DIR/compilers/gcc-10.2.0/bin:$PATH"
+
+# Define which commits to use (the references to dates and times are in
+# the format of the "date -d..." command).
+
+DATE1="-30 days"
+DATE2="-30 days"
+DATE3="-30 days"
+SPACING1="1 days"
+SPACING2="1 days"
+SPACING3="1 days"
+
+DATE1="-2 years"      # starting from 2 years ago
+SPACING1="30 days"    # use commits at least 30 days apart
+
+DATE2="-2 months"     # starting from 2 months ago
+SPACING2="1 days"     # use commits at least 1 day apart
+
+DATE3="-7 days"       # starting from 7 days ago
+SPACING3=""           # use all commits
+
+# Define the frequency of major tasks (which check more things than
+# minor tasks).
+
+MAJOR_TASK_PERIOD="1 hours"  # 1 hour between major tasks

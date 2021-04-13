@@ -1,0 +1,28 @@
+#! /bin/bash
+
+# File: "setup"
+
+# Usage: ./setup
+
+
+setup_crontab()
+{
+  HERE="`pwd`"
+
+  if ! crontab -l > the-crontab ; then
+    rm -f the-crontab
+    touch the-crontab
+  fi
+
+  if ! fgrep -e "$HERE/periodic-task" the-crontab ; then
+    echo "HOME=`pwd`" > new-crontab
+    cat the-crontab >> new-crontab
+    echo "*/1 * * * * $HERE/periodic-task < /dev/null 2>&1" >> new-crontab
+    crontab new-crontab
+  fi
+
+  rm -f the-crontab new-crontab
+}
+
+
+setup_crontab

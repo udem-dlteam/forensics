@@ -1,0 +1,5 @@
+./configure $CONFIGURE_OPTIONS --prefix="$INSTALL_DIR"
+
+make $MAKE_JOBS
+
+make install

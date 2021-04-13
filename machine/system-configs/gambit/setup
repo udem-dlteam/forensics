@@ -1,0 +1,3 @@
+GIT_REPO_URL="https://github.com/gambit/gambit"
+
+R7RS_BENCHMARKS="all"

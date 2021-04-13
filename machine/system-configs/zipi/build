@@ -1,0 +1,7 @@
+EXTRA_CONFIGURE_OPTIONS=""
+
+./configure --prefix="$INSTALL_DIR" $CONFIGURE_OPTIONS $EXTRA_CONFIGURE_OPTIONS
+
+make
+
+make install

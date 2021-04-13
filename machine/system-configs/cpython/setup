@@ -1,0 +1,16 @@
+GIT_REPO_URL="https://github.com/python/cpython"
+
+DATE1="-12 months"
+DATE2="-12 months"
+DATE3="-12 months"
+SPACING1="1 months"
+SPACING2="1 months"
+SPACING3="1 months"
+
+
+DATE1="-1 months"
+DATE2="-1 months"
+DATE3="-1 months"
+SPACING1="1 months"
+SPACING2="1 months"
+SPACING3="1 months"

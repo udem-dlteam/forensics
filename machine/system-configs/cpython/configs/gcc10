@@ -1,0 +1,5 @@
+PATH="$FORENSICS_DIR/compilers/gcc-10.2.0/bin:$PATH"
+
+BRANCH="master"
+
+CONFIGURE_OPTIONS=""

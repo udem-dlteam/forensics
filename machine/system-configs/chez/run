@@ -1,0 +1,7 @@
+(cd "$FORENSICS_DIR/benchmarks/r7rs" ; CHEZ=$INSTALL_DIR/bin/scheme ./bench chez "$R7RS_BENCHMARKS" 2>&1 > "$USAGE_DIR/.forensics-run-results-raw")
+
+cat "$USAGE_DIR/.forensics-run-results-raw"
+
+fgrep '+!CSVLINE!+' "$USAGE_DIR/.forensics-run-results-raw" | sed -e "s@^[^,]*,@r7rs/@g" -e "s@:[^,]*,@,@g" > "$USAGE_DIR/.forensics-run-results"
+
+rm "$USAGE_DIR/.forensics-run-results-raw"

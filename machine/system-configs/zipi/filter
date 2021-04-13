@@ -1,0 +1,12 @@
+# This script checks if the commit $COMMIT should be included in
+# the forensics report.
+#
+#   echo "0"     to skip this commit
+#   echo "1"     to include this commit
+#   echo ""      or other output or exiting with error to stop checking
+
+if [ "$COMMIT_TIME" -gt "$(date -d 'Apr 11 19:00:00 2021' +%s)" ] ; then
+  echo "1"
+else
+  echo "0"
+fi

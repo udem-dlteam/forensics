@@ -1,0 +1,193 @@
+#! /bin/bash
+
+# File: "build-cpython"
+
+# Usage: ./build-cpython cpython-3.8.0
+#
+# to build the highest available version:
+#
+# Usage: ./build-cpython
+
+GIT_URL="https://github.com/python/cpython"
+NAME_PREFIX="cpython-"
+VERSION_PREFIX="v"
+VERSION_SUFFIX=""
+
+
+ERROR_MESSAGE="UNKNOWN ERROR"
+
+
+fail_with_message()
+{
+  ERROR_MESSAGE="*** [$NAME_PREFIX$VERSION] build failed: $1"
+}
+
+
+get_available_parallelism()
+{
+  # This works on linux:
+  AVAILABLE_PARALLELISM="`nproc 2> /dev/null`"
+
+  if [ "$AVAILABLE_PARALLELISM" == "" ] ; then
+
+    # This works on macOS:
+    AVAILABLE_PARALLELISM="`sysctl -n hw.ncpu 2> /dev/null`"
+
+    if [ "$AVAILABLE_PARALLELISM" == "" ] ; then
+      # Just assume we have one processing unit
+      AVAILABLE_PARALLELISM="1"
+    fi
+
+  fi
+}
+
+get_available_parallelism
+
+MAKE_PARALLELISM="-j$AVAILABLE_PARALLELISM"
+
+
+file_exists()
+{
+  if [ ! -e "$1" ] ; then
+    return 1
+  fi
+}
+
+
+get_highest_version()
+{
+  PREFIX="$VERSION_PREFIX"
+  SUFFIX="$VERSION_SUFFIX"
+
+  if ! ( git tag | grep "^$PREFIX[0-9][0-9]*\.[0-9][0-9]*\.[0-9].*$SUFFIX\$" > .available-versions ) ; then
+
+    rm -f .available-versions
+    return 1
+
+  fi
+
+  if [ "$SUFFIX" == "" ] ; then
+    SUFFIX="no-suffix"
+  fi
+
+  HIGHEST_VERSION=""
+  HIGHEST_MAJ="0"
+  HIGHEST_MIN="0"
+  HIGHEST_REV="0"
+  HIGHEST_REV2=""
+
+  while read version ; do
+
+    maj=`echo $version | sed -e "s/^$PREFIX//g" -e "s/\..*//g"`
+    min=`echo $version | sed -e "s/^$PREFIX[0-9]*\.//g" -e "s/\..*//g"`
+    rev=`echo $version | sed -e "s/^$PREFIX[0-9]*\.[0-9]*\.//g" -e "s/[a-z].*//g"`
+    rev2=`echo $version | sed -e "s/^$PREFIX[0-9]*\.[0-9]*\.[0-9]*//g"`
+
+    if [ \( "$maj" -gt "$HIGHEST_MAJ" \) -o \( \( "$maj" -eq "$HIGHEST_MAJ" \) -a \( \( "$min" -gt "$HIGHEST_MIN" \) -o \( \( "$min" -eq "$HIGHEST_MIN" \) -a \( \( "$rev" -gt "$HIGHEST_REV" \) -o \( \( "$rev" -eq "$HIGHEST_REV" \) -a \( "$rev2" \> "$HIGHEST_REV2" \) \) \) \) \) \) ] ; then
+
+      HIGHEST_VERSION=`echo $version | sed -e "s/^$PREFIX//g" -e "s/$SUFFIX\$//g"`
+      HIGHEST_MAJ="$maj"
+      HIGHEST_MIN="$min"
+      HIGHEST_REV="$rev"
+      HIGHEST_REV2="$rev2"
+
+    fi
+
+  done < .available-versions
+
+  rm -f .available-versions
+}
+
+
+get_version()
+{
+  if [ "$VERSION" == "" ] ; then
+    get_highest_version
+    VERSION="$HIGHEST_VERSION"
+  fi
+}
+
+
+download()
+{
+  echo "Downloading:"
+  echo "  $GIT_URL"
+
+  if ! git clone "$GIT_URL" "$TEMP_DIR" ; then
+    return 1
+  fi
+}
+
+
+build()
+{
+  echo "*** [$NAME_PREFIX$VERSION] starting build"
+
+  if ! git checkout "$VERSION_PREFIX$VERSION$VERSION_SUFFIX" ; then
+    return 1
+  fi
+
+  if ! ( ./configure --prefix="$INSTALL_PREFIX" && time make $MAKE_PARALLELISM && make install ) ; then
+    rm -rf "$INSTALL_PREFIX"
+    return 1
+  fi
+}
+
+
+prepare_and_build()
+{
+  if ! get_version ; then
+    return 1
+  fi
+
+  INSTALL_PREFIX="$INSTALL_ROOT/$NAME_PREFIX$VERSION"
+
+  if file_exists "$INSTALL_PREFIX" ; then
+    ERROR_MESSAGE="can't overwrite existing install directory"
+    return 1
+  fi
+
+  if ! build ; then
+    return 1
+  fi
+}
+
+
+main()
+{
+  INSTALL_ROOT="`pwd`"
+  TEMP_DIR=".temp-$$"
+
+  if file_exists "$TEMP_DIR" ; then
+    ERROR_MESSAGE="can't overwrite existing temporary directory"
+    return 1
+  fi
+
+  if ! download ; then
+    return 1
+  fi
+
+  cd "$TEMP_DIR"
+
+  if ! prepare_and_build ; then
+
+    cd ..
+    rm -rf "$TEMP_DIR"
+    return 1
+
+  fi
+
+  cd ..
+
+  rm -rf "$TEMP_DIR"
+}
+
+
+VERSION="`echo $1 | sed -e 's/^[^-]*-//g' -e 's/^v//g'`"
+
+if ! main ; then
+  echo "$ERROR_MESSAGE"
+  exit 1
+fi
+
+echo "*** [$NAME_PREFIX$VERSION] build succeeded"

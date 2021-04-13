@@ -1,0 +1,691 @@
+#! /bin/bash
+
+# File: "periodic-task"
+
+# This shell script is run periodically using the cron system, usually
+# every minute.
+
+
+ERROR_MESSAGE="UNKNOWN ERROR"
+
+
+fail_with_message()
+{
+  ERROR_MESSAGE="*** periodic-task failed: $1"
+}
+
+
+file_exists()
+{
+  if [ ! -e "$1" ] ; then
+    return 1
+  fi
+}
+
+
+acquire_lock()
+{
+  timeout=$2
+  while ! mkdir "$1-lock" > /dev/null 2>&1 ; do
+    if [ $timeout == 0 ] ; then
+      return 1
+    fi
+    sleep 1
+    timeout=$(($timeout - 1))
+  done
+}
+
+
+release_lock()
+{
+  rmdir "$1-lock"
+}
+
+
+get_available_parallelism()
+{
+  # This works on linux:
+  AVAILABLE_PARALLELISM="`nproc 2> /dev/null`"
+
+  if [ "$AVAILABLE_PARALLELISM" == "" ] ; then
+
+    # This works on OS X:
+    AVAILABLE_PARALLELISM="`sysctl -n hw.ncpu 2> /dev/null`"
+
+    if [ "$AVAILABLE_PARALLELISM" == "" ] ; then
+      # Just assume we have one processing unit
+      AVAILABLE_PARALLELISM="1"
+    fi
+
+  fi
+}
+
+
+begin_task_set()
+{
+  rm -rf "$TASK_SET_DIR"
+  mkdir "$TASK_SET_DIR"
+  mkdir "$TASK_SET_DIR/parallel"
+  mkdir "$TASK_SET_DIR/sequential"
+  TASK_SET_SIZE_PARALLEL="0"
+  TASK_SET_SIZE_SEQUENTIAL="0"
+}
+
+
+bitrev()
+{
+  # 16 bit wide bit reversal
+  N=$1
+  N=$(((($N & 65280) >> 8) + (($N << 8) & 65280)))
+  N=$(((($N & 61680) >> 4) + (($N << 4) & 61680)))
+  N=$(((($N & 52428) >> 2) + (($N << 2) & 52428)))
+  N=$(((($N & 43690) >> 1) + (($N << 1) & 43690)))
+  echo $N
+}
+
+
+add_parallel_task()
+{
+  N="`bitrev $TASK_SET_SIZE_PARALLEL`"
+
+  TASK_NAME="$(($N / 10000))$(($N / 1000 % 10))$(($N / 100 % 10))$(($N / 10 % 10))$(($N % 10))"
+
+  mv "$1" "$TASK_SET_DIR/parallel/$TASK_NAME"
+
+  TASK_SET_SIZE_PARALLEL=$(($TASK_SET_SIZE_PARALLEL + 1))
+}
+
+
+add_sequential_task()
+{
+  N="`bitrev $TASK_SET_SIZE_SEQUENTIAL`"
+
+  TASK_NAME="$(($N / 10000))$(($N / 1000 % 10))$(($N / 100 % 10))$(($N / 10 % 10))$(($N % 10))"
+
+  mv "$1" "$TASK_SET_DIR/sequential/$TASK_NAME"
+
+  TASK_SET_SIZE_SEQUENTIAL=$(($TASK_SET_SIZE_SEQUENTIAL + 1))
+}
+
+
+run_each_file()
+{
+  # This function assumes that the "mv" command is atomic.
+
+  SELF=$1
+  SUBDIR=$2
+
+  for t in `cd "$TASK_SET_DIR/$SUBDIR" ; ls` ; do
+
+    if mv "$TASK_SET_DIR/$SUBDIR/$t" "$TASK_SET_DIR/$SUBDIR/.$t-$SELF" 2> /dev/null ; then
+
+      "$TASK_SET_DIR/$SUBDIR/.$t-$SELF"
+
+    fi
+
+  done
+}
+
+
+run_task_set()
+{
+  N="$2"
+
+  if [ "$N" == "" ] ; then
+    # If parallelism level is not specified, use machine's available parallelism
+    get_available_parallelism
+    N="$AVAILABLE_PARALLELISM"
+  fi
+
+  if [ "$(($TASK_SET_SIZE_PARALLEL >= $N || $TASK_SET_SIZE_PARALLEL == 0))" == 1 ] ; then
+    PARALLELISM="1"
+    MAKE_JOBS=""
+  else
+    PARALLELISM="$(($N / $TASK_SET_SIZE_PARALLEL))"
+    MAKE_JOBS="-j$PARALLELISM"
+  fi
+
+  export PARALLELISM MAKE_JOBS
+
+  echo "*** number of task set workers = $N (PARALLELISM=$PARALLELISM)"
+
+  PIDS=""
+
+  for i in `seq $N` ; do
+    run_each_file $i parallel &
+    PIDS="$PIDS $!"
+  done
+
+  wait $PIDS
+
+  run_each_file 0 sequential
+
+  rm -rf "$TASK_SET_DIR"
+}
+
+
+create_local_repo()
+{
+  timeout=10
+
+  rm -rf "$REPO_DIR"
+
+  while ! git clone "$GIT_REPO_URL" "$REPO_DIR" ; do
+    if [ $timeout == 0 ] ; then
+      rm -rf "$REPO_DIR"
+      fail_with_message "could not copy repository $GIT_REPO_URL"
+      return 1
+    fi
+    rm -rf "$REPO_DIR"
+    sleep 6
+    timeout=$(($timeout - 1))
+  done
+}
+
+
+pull_to_local_repo()
+{
+  timeout=10
+
+  while ! ( cd "$REPO_DIR" ; git pull ) ; do
+    if [ $timeout == 0 ] ; then
+      fail_with_message "could not pull repository $GIT_REPO_URL"
+      return 1
+    fi
+    sleep 6
+    timeout=$(($timeout - 1))
+  done
+}
+
+
+for_each_commit()
+{
+  NEXT_SELECTED_COMMIT_TIME="9999999999"
+
+  (cd "$REPO_DIR" ; git checkout "$BRANCH")
+
+  COMMIT="`cd "$REPO_DIR" ; git log --format=format:%H -n 1`"
+
+  while true ; do
+
+    COMMIT_TIME="`cd "$REPO_DIR" ; git log --no-walk --format=%ct \"$COMMIT\"`"
+
+    if [ "$(($COMMIT_TIME < $DATE1_TIME))" == 1 ] ; then
+      break
+    fi
+
+    SELECT="0"
+
+    if [ "$(($COMMIT_TIME >= $DATE3_TIME))" == 1 ] ; then
+      if [ "$(($SPACING3_TIME == 0 || $COMMIT_TIME / $SPACING3_TIME < $NEXT_SELECTED_COMMIT_TIME / $SPACING3_TIME))" == 1 ] ; then
+        SELECT="1"
+      fi
+    else
+      if [ "$(($COMMIT_TIME >= $DATE2_TIME))" == 1 ] ; then
+        if [ "$(($SPACING2_TIME == 0 || $COMMIT_TIME / $SPACING2_TIME < $NEXT_SELECTED_COMMIT_TIME / $SPACING2_TIME))" == 1 ] ; then
+          SELECT="1"
+        fi
+      else
+        if [ "$(($SPACING1_TIME == 0 || $COMMIT_TIME / $SPACING1_TIME < $NEXT_SELECTED_COMMIT_TIME / $SPACING1_TIME))" == 1 ] ; then
+          SELECT="1"
+	fi
+      fi
+    fi
+      
+    if [ "$SELECT" == "1" ] ; then
+      export FORENSICS_DIR REPO_DIR BUILD_DIR SYSTEM CONFIG COMMIT COMMIT_TIME
+      SELECT="`cd system-repos/$SYSTEM ; ../../system-configs/$SYSTEM/filter $COMMIT $COMMIT_TIME $CONFIG $SYSTEM`"
+      if [ "$SELECT" == "1" ] ; then
+        $1
+	NEXT_SELECTED_COMMIT_TIME="$COMMIT_TIME"
+      else
+        if [ "$SELECT" != "0" ] ; then
+  	  break
+	fi
+      fi
+    fi
+
+    if ! ( cd "$REPO_DIR" ; git log --format=format:%H -n 1 "$COMMIT^" ) > previous-commit-$$ 2> /dev/null ; then
+      rm -f previous-commit-$$
+      break
+    fi
+
+    COMMIT="`cat previous-commit-$$`"
+
+    rm -f previous-commit-$$
+
+  done
+}
+
+
+create_build_script()
+{
+  SCRIPT_FILE="$1"
+
+  echo "#!/bin/bash"                  >  "$SCRIPT_FILE"
+  echo "exec >> \"$FORENSICS_DIR/$CONFIG_DIR/.forensics-build-output\"" >> "$SCRIPT_FILE"
+  echo "exec 2>&1"                    >> "$SCRIPT_FILE"
+  echo "THIS_FILE=\"\$(readlink -f \$0)\"" >> "$SCRIPT_FILE"
+  echo "on_err()"                     >> "$SCRIPT_FILE"
+  echo "{"                            >> "$SCRIPT_FILE"
+  echo "  exit 1"                     >> "$SCRIPT_FILE"
+  echo "}"                            >> "$SCRIPT_FILE"
+  echo "trap on_err ERR"              >> "$SCRIPT_FILE"
+  echo "on_exit()"                    >> "$SCRIPT_FILE"
+  echo "{"                            >> "$SCRIPT_FILE"
+  echo "  CODE=\$?"                   >> "$SCRIPT_FILE"
+  echo "  rm -rf \"$FORENSICS_DIR/$CONFIG_DIR/.forensics-build\"" >> "$SCRIPT_FILE"
+  echo "  mv \"\$THIS_FILE\" \"$FORENSICS_DIR/$CONFIG_DIR/.forensics-build-script-\$CODE\"" >> "$SCRIPT_FILE"
+  echo "  exit \$CODE"                >> "$SCRIPT_FILE"
+  echo "}"                            >> "$SCRIPT_FILE"
+  echo "trap on_exit 0"               >> "$SCRIPT_FILE"
+  echo "SYSTEM=\"$SYSTEM\""           >> "$SCRIPT_FILE"
+  echo "COMMIT=\"$COMMIT\""           >> "$SCRIPT_FILE"
+  echo "CONFIG=\"$CONFIG\""           >> "$SCRIPT_FILE"
+  echo "COMMIT_TIME=\"$COMMIT_TIME\"" >> "$SCRIPT_FILE"
+  echo "INSTALL_DIR=\"$FORENSICS_DIR/$CONFIG_DIR\"" >> "$SCRIPT_FILE"
+  echo "cd \"$FORENSICS_DIR\""        >> "$SCRIPT_FILE"
+  echo "source \"$FORENSICS_DIR/common-setup\"" >> "$SCRIPT_FILE"
+  echo "cd \"\$INSTALL_DIR/.forensics-build\"" >> "$SCRIPT_FILE"
+  cat "$FORENSICS_DIR/common-build-setup" >> "$SCRIPT_FILE"
+  echo ""                             >> "$SCRIPT_FILE"
+  cat "$FORENSICS_DIR/system-configs/$SYSTEM/setup" >> "$SCRIPT_FILE"
+  echo ""                             >> "$SCRIPT_FILE"
+  cat "$FORENSICS_DIR/system-configs/$SYSTEM/configs/$CONFIG" >> "$SCRIPT_FILE"
+  echo ""                             >> "$SCRIPT_FILE"
+  echo "BUILD_START_TIME=\"\`date +%s\`\"" >> "$SCRIPT_FILE"
+  cat "$FORENSICS_DIR/system-configs/$SYSTEM/build" >> "$SCRIPT_FILE"
+  echo ""                             >> "$SCRIPT_FILE"
+  echo "BUILD_END_TIME=\"\`date +%s\`\"" >> "$SCRIPT_FILE"
+  echo "source \"$FORENSICS_DIR/report-build-results\"" >> "$SCRIPT_FILE"
+  echo "exit 0"                       >> "$SCRIPT_FILE"
+
+  chmod +x "$SCRIPT_FILE"
+}
+
+
+create_run_script()
+{
+  SCRIPT_FILE="$1"
+
+  echo "#!/bin/bash"                  >  "$SCRIPT_FILE"
+  echo "exec >> \"$FORENSICS_DIR/$CONFIG_DIR/.forensics-usage/$USAGE/.forensics-run-output\"" >> "$SCRIPT_FILE"
+  echo "exec 2>&1"                    >> "$SCRIPT_FILE"
+  echo "THIS_FILE=\"\$(readlink -f \$0)\"" >> "$SCRIPT_FILE"
+  echo "on_err()"                     >> "$SCRIPT_FILE"
+  echo "{"                            >> "$SCRIPT_FILE"
+  echo "  exit 1"                     >> "$SCRIPT_FILE"
+  echo "}"                            >> "$SCRIPT_FILE"
+  echo "trap on_err ERR"              >> "$SCRIPT_FILE"
+  echo "on_exit()"                    >> "$SCRIPT_FILE"
+  echo "{"                            >> "$SCRIPT_FILE"
+  echo "  CODE=\$?"                   >> "$SCRIPT_FILE"
+  echo "  mv \"\$THIS_FILE\" \"$FORENSICS_DIR/$CONFIG_DIR/.forensics-usage/$USAGE/.forensics-run-script-\$CODE\"" >> "$SCRIPT_FILE"
+  echo "  exit \$CODE"                >> "$SCRIPT_FILE"
+  echo "}"                            >> "$SCRIPT_FILE"
+  echo "trap on_exit 0"               >> "$SCRIPT_FILE"
+  echo "SYSTEM=\"$SYSTEM\""           >> "$SCRIPT_FILE"
+  echo "COMMIT=\"$COMMIT\""           >> "$SCRIPT_FILE"
+  echo "CONFIG=\"$CONFIG\""           >> "$SCRIPT_FILE"
+  echo "USAGE=\"$USAGE\""             >> "$SCRIPT_FILE"
+  echo "COMMIT_TIME=\"$COMMIT_TIME\"" >> "$SCRIPT_FILE"
+  echo "INSTALL_DIR=\"$FORENSICS_DIR/$CONFIG_DIR\"" >> "$SCRIPT_FILE"
+  echo "USAGE_DIR=\"$FORENSICS_DIR/$USAGE_DIR\"" >> "$SCRIPT_FILE"
+  echo "cd \"$FORENSICS_DIR\""        >> "$SCRIPT_FILE"
+  echo "source \"$FORENSICS_DIR/common-setup\"" >> "$SCRIPT_FILE"
+  echo "cd \"$FORENSICS_DIR/$CONFIG_DIR/.forensics-usage/$USAGE\"" >> "$SCRIPT_FILE"
+  cat "$FORENSICS_DIR/common-build-setup" >> "$SCRIPT_FILE"
+  echo ""                             >> "$SCRIPT_FILE"
+  cat "$FORENSICS_DIR/system-configs/$SYSTEM/setup" >> "$SCRIPT_FILE"
+  echo ""                             >> "$SCRIPT_FILE"
+  cat "$FORENSICS_DIR/system-configs/$SYSTEM/configs/$CONFIG" >> "$SCRIPT_FILE"
+  echo ""                             >> "$SCRIPT_FILE"
+  cat "$FORENSICS_DIR/system-configs/$SYSTEM/usages/$USAGE" >> "$SCRIPT_FILE"
+  echo ""                             >> "$SCRIPT_FILE"
+  echo "RUN_START_TIME=\"\`date +%s\`\"" >> "$SCRIPT_FILE"
+  cat "$FORENSICS_DIR/system-configs/$SYSTEM/run" >> "$SCRIPT_FILE"
+  echo ""                             >> "$SCRIPT_FILE"
+  echo "RUN_END_TIME=\"\`date +%s\`\"" >> "$SCRIPT_FILE"
+  echo "source \"$FORENSICS_DIR/report-run-results\"" >> "$SCRIPT_FILE"
+  echo "exit 0"                       >> "$SCRIPT_FILE"
+
+  chmod +x "$SCRIPT_FILE"
+}
+
+
+add_build_and_run_as_needed()
+{
+  COMMIT_DIR="$BUILD_DIR/$COMMIT"
+  CONFIG_DIR="$COMMIT_DIR/$CONFIG"
+  CONFIG_BUILD_DIR="$CONFIG_DIR/.forensics-build"
+
+  BUILD_SCRIPT_FILE="$BUILD_DIR/.forensics-build-temp-$$"
+
+  create_build_script "$BUILD_SCRIPT_FILE"
+
+  if diff "$BUILD_SCRIPT_FILE" $CONFIG_DIR/.forensics-build-script-* > /dev/null 2>&1 ; then
+
+    rm -f "$BUILD_SCRIPT_FILE"
+
+  else
+
+    if ! file_exists "$COMMIT_DIR" ; then
+      mkdir "$COMMIT_DIR"
+    fi
+
+    if file_exists "$CONFIG_DIR" ; then
+      rm -rf "$CONFIG_DIR"
+    fi
+
+    mkdir "$CONFIG_DIR"
+
+    get_system_config
+    git clone "$REPO_DIR" "$CONFIG_BUILD_DIR-$$"
+    mv "$CONFIG_BUILD_DIR-$$" "$CONFIG_BUILD_DIR"
+    (cd "$CONFIG_BUILD_DIR" ; git checkout "$COMMIT")
+
+    add_parallel_task "$BUILD_SCRIPT_FILE"
+
+  fi
+
+  for USAGE in $CURRENT_USAGES ; do
+
+    get_system_usage
+
+    USAGE_PARENT_DIR="$CONFIG_DIR/.forensics-usage"
+
+    if ! file_exists "$USAGE_PARENT_DIR" ; then
+      mkdir "$USAGE_PARENT_DIR"
+    fi
+
+    USAGE_DIR="$USAGE_PARENT_DIR/$USAGE"
+
+    if ! file_exists "$USAGE_DIR" ; then
+      mkdir "$USAGE_DIR"
+    fi
+
+    RUN_SCRIPT_FILE="$BUILD_DIR/.forensics-run-temp-$$"
+
+    create_run_script "$RUN_SCRIPT_FILE"
+
+    if diff "$RUN_SCRIPT_FILE" $USAGE_DIR/.forensics-run-script-* > /dev/null 2>&1 ; then
+
+      rm -f "$RUN_SCRIPT_FILE"
+
+    else
+
+      if file_exists "$USAGE_DIR" ; then
+        rm -rf "$USAGE_DIR"
+      fi
+
+      mkdir "$USAGE_DIR"
+
+      add_sequential_task "$RUN_SCRIPT_FILE"
+
+    fi
+
+  done
+}
+
+get_system_config()
+{
+  BRANCH="master"
+  source "system-configs/$SYSTEM/configs/$CONFIG"
+}
+
+
+get_system_usage()
+{
+  source "system-configs/$SYSTEM/usages/$USAGE"
+}
+
+
+process_all()
+{
+  echo "... $SYSTEM: process_all"
+  echo "SYSTEM=$SYSTEM"
+  echo "GIT_REPO_URL=$GIT_REPO_URL"
+  echo "REPO_DIR=$REPO_DIR"
+  echo "BUILD_DIR=$BUILD_DIR"
+
+  for CONFIG in $CURRENT_CONFIGS ; do
+
+    get_system_config
+
+    for_each_commit add_build_and_run_as_needed
+
+  done
+}
+
+
+check_for_new_commits()
+{
+  REPO_DIR="system-repos/$SYSTEM"
+  BUILD_DIR="system-builds/$SYSTEM"
+
+  if ! file_exists "$BUILD_DIR" ; then
+    mkdir "$BUILD_DIR"
+  fi
+
+  if ! file_exists "$REPO_DIR" ; then
+
+    if ! create_local_repo ; then
+      return 1
+    fi
+
+  else
+
+    if ! pull_to_local_repo ; then
+      return 1
+    fi
+
+  fi
+
+  LATEST_COMMIT_PROCESSED="`cat $BUILD_DIR/.latest-commit-processed 2> /dev/null`"
+  LATEST_CONFIGS_PROCESSED="`cat $BUILD_DIR/.latest-configs-processed 2> /dev/null`"
+  LATEST_USAGES_PROCESSED="`cat $BUILD_DIR/.latest-usages-processed 2> /dev/null`"
+
+  LATEST_COMMIT="`cd $REPO_DIR ; git log --all --date-order --format=format:%H -n 1`"
+  CURRENT_CONFIGS="`ls system-configs/$SYSTEM/configs 2> /dev/null`"
+  CURRENT_USAGES="`ls system-configs/$SYSTEM/usages 2> /dev/null`"
+
+  echo $LATEST_COMMIT
+  echo $CURRENT_CONFIGS
+  echo $CURRENT_USAGES
+  echo $LATEST_COMMIT_PROCESSED
+  echo $LATEST_CONFIGS_PROCESSED
+  echo $LATEST_USAGES_PROCESSED
+
+  if [ "$LATEST_COMMIT" != "$LATEST_COMMIT_PROCESSED" -o "$CURRENT_CONFIGS" != "$LATEST_CONFIGS_PROCESSED" -o "$CURRENT_USAGES" != "$LATEST_USAGES_PROCESSED" -o "$KIND" == "major" ] ; then
+
+    if ! process_all ; then
+      return 1
+    fi
+
+    echo "$LATEST_COMMIT" > "$BUILD_DIR/.latest-commit-processed"
+    echo "$CURRENT_CONFIGS" > "$BUILD_DIR/.latest-configs-processed"
+    echo "$CURRENT_USAGES" > "$BUILD_DIR/.latest-usages-processed"
+
+  fi
+}
+
+
+get_system_setup()
+{
+  GIT_REPO_URL=""
+  source "system-configs/$SYSTEM/setup"
+}
+
+
+check_all_systems_for_new_commits()
+{
+  for sys in `cd system-configs ; ls` ; do
+    SYSTEM="$sys"
+    if file_exists "system-configs/$SYSTEM/setup" ; then
+      get_common_setup
+      get_system_setup
+      echo "--- $SYSTEM GIT_REPO_URL=$GIT_REPO_URL"
+      if ! check_for_new_commits ; then
+        return 1
+      fi
+    else
+      echo "*** file system-configs/$SYSTEM/setup is missing"
+    fi
+  done
+}
+
+
+perform_task()
+{
+  echo "######## `date`: $KIND periodic task"
+
+  TASK_SET_DIR="system-builds/.task-set-$$"
+
+  begin_task_set
+
+  if ! check_all_systems_for_new_commits ; then
+    return 1
+  fi
+
+  # run builds concurrently
+  run_task_set
+}
+
+
+get_common_setup()
+{
+  PATH="$INITIAL_PATH"
+
+  DATE1="1970-01-01"
+  SPACING1=""
+
+  DATE2="1970-01-01"
+  SPACING2=""
+
+  DATE3="1970-01-01"
+  SPACING3=""
+
+  MAJOR_TASK_PERIOD="1 hours"  # default is 1 hour between major tasks
+
+  source common-setup
+
+  CURRENT_TIME="`date +%s`"
+
+  DATE1_TIME="`date -d\"$DATE1\" +%s`"
+  if [ "$SPACING1" == "" ] ; then
+    SPACING1_TIME="0"
+  else
+    SPACING1_TIME="`date -d\"$SPACING1\" +%s`"
+    SPACING1_TIME="$(($SPACING1_TIME - $CURRENT_TIME))"
+  fi
+
+  DATE2_TIME="`date -d\"$DATE2\" +%s`"
+  if [ "$SPACING2" == "" ] ; then
+    SPACING2_TIME="0"
+  else
+    SPACING2_TIME="`date -d\"$SPACING2\" +%s`"
+    SPACING2_TIME="$(($SPACING2_TIME - $CURRENT_TIME))"
+  fi
+
+  DATE3_TIME="`date -d\"$DATE3\" +%s`"
+  if [ "$SPACING3" == "" ] ; then
+    SPACING3_TIME="0"
+  else
+    SPACING3_TIME="`date -d\"$SPACING3\" +%s`"
+    SPACING3_TIME="$(($SPACING3_TIME - $CURRENT_TIME))"
+  fi
+
+  MAJOR_TASK_PERIOD_TIME="`date -d\"-$MAJOR_TASK_PERIOD\" +%s`"
+}
+
+
+get_common_build_setup()
+{
+  source common-build-setup
+}
+
+
+get_common_run_setup()
+{
+  source common-run-setup
+}
+
+
+periodic_task()
+{
+  get_common_setup
+
+  if file_exists "latest-major-periodic-task" ; then
+    LATEST_MAJOR="`cat latest-major-periodic-task`"
+  else
+    LATEST_MAJOR="0"
+  fi
+
+  if [ "$(($LATEST_MAJOR < $MAJOR_TASK_PERIOD_TIME))" == "1" ] ; then
+    # major task every hour
+    echo "$CURRENT_TIME" > latest-major-periodic-task
+    KIND="major"
+  else
+    KIND="minor"
+  fi
+
+  if ! perform_task ; then
+    return 1
+  fi
+}
+
+
+begin_administrator_feedback()
+{
+  ADMINISTRATOR_FEEDBACK_DIR="administrator-feedback-$$"
+
+  mkdir "$ADMINISTRATOR_FEEDBACK_DIR"
+}
+
+
+end_administrator_feedback()
+{
+  if file_exists "$ADMINISTRATOR_FEEDBACK_DIR" ; then
+
+    cd "$ADMINISTRATOR_FEEDBACK_DIR"
+
+    for f in `ls` ; do
+      cat "$f"
+    done
+
+    cd ..
+
+    rm -rf "$ADMINISTRATOR_FEEDBACK_DIR"
+
+  fi
+}
+
+
+main()
+{
+  ulimit -u 16384 # allow many processes
+
+  INITIAL_PATH="$PATH"
+
+  if acquire_lock "periodic-task" 0 ; then
+
+    if ! periodic_task ; then
+      release_lock "periodic-task"
+      return 1
+    fi
+
+    release_lock "periodic-task"
+
+  fi
+}
+
+
+cd $(dirname "$0")
+
+begin_administrator_feedback
+
+if ! main >> periodic-task.log 2>&1 ; then
+  echo "$ERROR_MESSAGE"
+fi
+
+end_administrator_feedback
