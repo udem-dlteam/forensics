@@ -1,0 +1,239 @@
+#! /bin/bash
+
+# File: "build-gambit"
+
+# Usage: ./build-gambit gambit-v4.9.3-1352
+#
+# This builds the 1352th commit after the release v4.9.3 .
+#
+# To build the latest release:  ./build-gambit latest
+#
+# To build the latest commit:   ./build-gambit
+#
+# To build a specific release:  ./build-gambit v4.8.2
+#
+# The oldest release of Gambit that can be build with this script is v4.6.6 .
+
+
+GIT_URL="https://github.com/gambit/gambit"
+NAME_PREFIX="gambit-"
+VERSION_PREFIX="v"
+VERSION_SUFFIX=""
+
+
+ERROR_MESSAGE="UNKNOWN ERROR"
+
+
+fail_with_message()
+{
+  ERROR_MESSAGE="*** [$NAME_PREFIX$VERSION_PREFIX$VERSION$NCOMMITS] build failed: $1"
+}
+
+
+get_available_parallelism()
+{
+  # This works on linux:
+  AVAILABLE_PARALLELISM="`nproc 2> /dev/null`"
+
+  if [ "$AVAILABLE_PARALLELISM" == "" ] ; then
+
+    # This works on macOS:
+    AVAILABLE_PARALLELISM="`sysctl -n hw.ncpu 2> /dev/null`"
+
+    if [ "$AVAILABLE_PARALLELISM" == "" ] ; then
+      # Just assume we have one processing unit
+      AVAILABLE_PARALLELISM="1"
+    fi
+
+  fi
+}
+
+get_available_parallelism
+
+MAKE_PARALLELISM="-j$AVAILABLE_PARALLELISM"
+
+
+file_exists()
+{
+  if [ ! -e "$1" ] ; then
+    return 1
+  fi
+}
+
+
+get_highest_version_from_tags()
+{
+  PREFIX="$VERSION_PREFIX"
+  SUFFIX="$VERSION_SUFFIX"
+
+  if ! ( git tag | grep "^$PREFIX[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$SUFFIX\$" > .available-versions ) ; then
+
+    rm -f .available-versions
+    return 1
+
+  fi
+
+  if [ "$SUFFIX" == "" ] ; then
+    SUFFIX="no-suffix"
+  fi
+
+  HIGHEST_VERSION=""
+  HIGHEST_MAJ="0"
+  HIGHEST_MIN="0"
+  HIGHEST_REV="0"
+
+  while read version ; do
+
+    maj="`echo $version | sed -e \"s/^$PREFIX//g\" -e \"s/\..*//g\"`"
+    min="`echo $version | sed -e \"s/^$PREFIX[0-9]*\.//g\" -e \"s/\..*//g\"`"
+    rev="`echo $version | sed -e \"s/^$PREFIX[0-9]*\.[0-9]*\.//g\" -e \"s/[a-z].*//g\"`"
+
+    if [ \( "$maj" -gt "$HIGHEST_MAJ" \) -o \( \( "$maj" -eq "$HIGHEST_MAJ" \) -a \( \( "$min" -gt "$HIGHEST_MIN" \) -o \( \( "$min" -eq "$HIGHEST_MIN" \) -a \( \( "$rev" -gt "$HIGHEST_REV" \) \) \) \) \) ] ; then
+
+      HIGHEST_VERSION=`echo $version | sed -e "s/^$PREFIX//g" -e "s/$SUFFIX\$//g"`
+      HIGHEST_MAJ="$maj"
+      HIGHEST_MIN="$min"
+      HIGHEST_REV="$rev"
+
+    fi
+
+  done < .available-versions
+
+  rm -f .available-versions
+}
+
+
+descr_to_version_and_ncommits()
+{
+  VERSION="`echo \"$DESCR\" | sed -e \"s/^$VERSION_PREFIX//g\" -e \"s/-.*//g\"`"
+
+  if [ "$VERSION" == "" ] ; then
+
+    VERSION="HEAD"
+    NCOMMITS=""
+
+  else
+
+    NCOMMITS="`echo \"$DESCR\" | sed -e \"s/.*-/-/g\"`"
+
+    if [ "$NCOMMITS" == "$DESCR" ] ; then
+      NCOMMITS=""
+    fi
+  fi
+}
+
+
+get_HEAD_version_and_ncommits()
+{
+  DESCR="`git describe --tag --always | sed -e \"s/-g[0-9a-z][0-9a-z]*\$//g\"`"
+
+  descr_to_version_and_ncommits
+}
+
+
+get_version()
+{
+  if [ "$VERSION" == "latest" ] ; then
+    get_highest_version_from_tags
+    VERSION="$HIGHEST_VERSION"
+    NCOMMITS=""
+  else
+    if [ "$VERSION" == "HEAD" ] ; then
+      get_HEAD_version_and_ncommits
+    fi
+  fi
+}
+
+
+download()
+{
+  echo "Downloading:"
+  echo "  $GIT_URL"
+
+  if ! git clone "$GIT_URL" "$TEMP_DIR" ; then
+    return 1
+  fi
+}
+
+
+build()
+{
+  echo "*** [$NAME_PREFIX$VERSION_PREFIX$VERSION$NCOMMITS] starting build"
+
+  if [ "$NCOMMITS" == "" ] ; then
+    COMMIT="$VERSION_PREFIX$VERSION$VERSION_SUFFIX"
+  else
+    COMMIT="`git rev-list -n 1 tags/$VERSION_PREFIX$VERSION`"
+    COMMIT="`git rev-list --reverse HEAD|sed -e "1,/^$COMMIT\$/d"|head $NCOMMITS|tail -1`"
+  fi
+
+  if ! git checkout "$COMMIT" ; then
+    return 1
+  fi
+
+  if ! ( ./configure --enable-single-host --prefix="$INSTALL_PREFIX" && time make $MAKE_PARALLELISM && make check && make install ) ; then
+    rm -rf "$INSTALL_PREFIX"
+    return 1
+  fi
+}
+
+
+prepare_and_build()
+{
+  if ! get_version ; then
+    return 1
+  fi
+
+  INSTALL_PREFIX="$INSTALL_ROOT/$NAME_PREFIX$VERSION_PREFIX$VERSION$NCOMMITS"
+
+  if file_exists "$INSTALL_PREFIX" ; then
+    ERROR_MESSAGE="can't overwrite existing install directory: $INSTALL_PREFIX"
+    return 1
+  fi
+
+  if ! build ; then
+    return 1
+  fi
+}
+
+
+main()
+{
+  INSTALL_ROOT="`pwd`"
+  TEMP_DIR=".build-$NAME_PREFIX$$"
+
+  if file_exists "$TEMP_DIR" ; then
+    ERROR_MESSAGE="can't overwrite existing temporary directory: $TEMP_DIR"
+    return 1
+  fi
+
+  if ! download ; then
+    return 1
+  fi
+
+  cd "$TEMP_DIR"
+
+  if ! prepare_and_build ; then
+
+    cd ..
+    rm -rf "$TEMP_DIR"
+    return 1
+
+  fi
+
+  cd ..
+
+  rm -rf "$TEMP_DIR"
+}
+
+
+DESCR="`echo \"$1\" | sed -e \"s/^[^-]*-//g\"`"
+
+descr_to_version_and_ncommits
+
+if ! main ; then
+  echo "$ERROR_MESSAGE"
+  exit 1
+fi
+
+echo "*** [$NAME_PREFIX$VERSION_PREFIX$VERSION$NCOMMITS] build succeeded"
