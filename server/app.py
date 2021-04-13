@@ -9,11 +9,16 @@ from datetime import datetime
 # ==========================================
 
 from flask import Flask
+from flask_caching import Cache
 from pony.flask import Pony
 
 # wrapper for db_session
 app = Flask(__name__)
 Pony(app)
+
+# TODO Use global Flask app config
+cache = Cache(config={'CACHE_TYPE': 'SimpleCache'})
+cache.init_app(app)
 
 # cors
 from flask_cors import CORS, cross_origin
@@ -26,6 +31,7 @@ from flask_restful import Api, Resource
 api = Api(app)
 
 class APILegacy(Resource):
+    @cache.cached(timeout=60)
     def get(self):
         systems = select(x for x in System)
         return_value = []
