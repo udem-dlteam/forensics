@@ -1,0 +1,68 @@
+#! /bin/bash
+
+# File: "build-all"
+
+# Usage: ./build-all
+
+# This script builds all the compilers required.
+
+
+GCC_VERSION=10.2.0
+GCC_CONFIGURE_OPTIONS=""
+
+GAMBIT_VERSION=4.9.3-1352
+GAMBIT_CONFIGURE_OPTIONS="--enable-single-host"
+
+BIGLOO_VERSION=4.4b
+BIGLOO_CONFIGURE_OPTIONS=""
+
+CPYTHON_VERSION=3.9.0
+CPYTHON_CONFIGURE_OPTIONS=""
+
+
+GCC_DIR="`pwd`/gcc-$GCC_VERSION"
+GCC_PATH="$GCC_DIR/bin"
+export PATH="$GCC_PATH:$PATH"
+
+if ! test -e "$GCC_DIR" ; then
+  time ./build-gcc gcc-$GCC_VERSION $GCC_CONFIGURE_OPTIONS
+fi
+
+echo "***** version of gcc:"
+gcc --version
+
+
+GAMBIT_DIR="`pwd`/gambit-$GAMBIT_VERSION"
+GAMBIT_PATH="$GAMBIT_DIR/bin"
+export PATH="$GAMBIT_PATH:$PATH"
+
+if ! test -e "$GAMBIT_DIR" ; then
+  time ./build-gambit gambit-$GAMBIT_VERSION $GAMBIT_CONFIGURE_OPTIONS CC="$GCC_PATH/gcc"
+fi
+
+echo "***** version of gambit:"
+gsc -v
+
+
+BIGLOO_DIR="`pwd`/bigloo-$BIGLOO_VERSION"
+BIGLOO_PATH="$BIGLOO_DIR/bin"
+export PATH="$BIGLOO_PATH:$PATH"
+
+if ! test -e "$BIGLOO_DIR" ; then
+  time ./build-bigloo bigloo-$BIGLOO_VERSION $BIGLOO_CONFIGURE_OPTIONS CC="$GCC_PATH/gcc"
+fi
+
+echo "***** version of bigloo:"
+bigloo -version
+
+
+CPYTHON_DIR="`pwd`/cpython-$CPYTHON_VERSION"
+CPYTHON_PATH="$CPYTHON_DIR/bin"
+export PATH="$CPYTHON_PATH:$PATH"
+
+if ! test -e "$CPYTHON_DIR" ; then
+  time ./build-cpython cpython-$CPYTHON_VERSION $CPYTHON_CONFIGURE_OPTIONS CC="$GCC_PATH/gcc"
+fi
+
+echo "***** version of cpython:"
+python3 --version

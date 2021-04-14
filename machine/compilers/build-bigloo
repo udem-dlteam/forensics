@@ -40,7 +40,7 @@ get_available_parallelism()
 
 get_available_parallelism
 
-MAKE_PARALLELISM="-j$AVAILABLE_PARALLELISM"
+MAKE_JOBS="-j$AVAILABLE_PARALLELISM"
 
 
 file_exists()
@@ -130,7 +130,7 @@ build_all()
 
   cd "$BIGLOO_VERSION-build"
 
-  if ! ( ./configure --prefix="$INSTALL_PREFIX" && time make $MAKE_PARALLELISM && make install ) ; then
+  if ! ( ./configure --prefix="$INSTALL_PREFIX" $CONFIGURE_OPTIONS && time make $MAKE_JOBS && make install ) ; then
 echo error
     rm -rf "$INSTALL_PREFIX"
     cd ..
@@ -172,25 +172,30 @@ check()
 main()
 {
   INSTALL_ROOT="`pwd`"
+  TEMP_DIR=".build-bigloo-$$"
 
-  mkdir ".temp-$$"
+  mkdir "$TEMP_DIR"
 
-  cd ".temp-$$"
+  cd "$TEMP_DIR"
 
   if ! check ; then
 
-    rm -rf ".temp-$$"
+    rm -rf "$TEMP_DIR"
     return 1
 
   fi
 
   cd ..
 
-  rm -rf ".temp-$$"
+  rm -rf "$TEMP_DIR"
 }
 
 
 BIGLOO_VERSION="$1"
+
+shift
+
+CONFIGURE_OPTIONS="$*"
 
 if ! main ; then
   echo "$ERROR_MESSAGE"

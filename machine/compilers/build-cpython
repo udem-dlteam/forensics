@@ -43,7 +43,7 @@ get_available_parallelism()
 
 get_available_parallelism
 
-MAKE_PARALLELISM="-j$AVAILABLE_PARALLELISM"
+MAKE_JOBS="-j$AVAILABLE_PARALLELISM"
 
 
 file_exists()
@@ -127,7 +127,7 @@ build()
     return 1
   fi
 
-  if ! ( ./configure --prefix="$INSTALL_PREFIX" && time make $MAKE_PARALLELISM && make install ) ; then
+  if ! ( ./configure --prefix="$INSTALL_PREFIX" $CONFIGURE_OPTIONS && time make $MAKE_JOBS && make install ) ; then
     rm -rf "$INSTALL_PREFIX"
     return 1
   fi
@@ -156,7 +156,7 @@ prepare_and_build()
 main()
 {
   INSTALL_ROOT="`pwd`"
-  TEMP_DIR=".temp-$$"
+  TEMP_DIR=".build-$NAME_PREFIX$$"
 
   if file_exists "$TEMP_DIR" ; then
     ERROR_MESSAGE="can't overwrite existing temporary directory"
@@ -184,6 +184,10 @@ main()
 
 
 VERSION="`echo $1 | sed -e 's/^[^-]*-//g' -e 's/^v//g'`"
+
+shift
+
+CONFIGURE_OPTIONS="$*"
 
 if ! main ; then
   echo "$ERROR_MESSAGE"

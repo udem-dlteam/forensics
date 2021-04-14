@@ -8,9 +8,13 @@
 #
 # To build the latest release:  ./build-gambit latest
 #
-# To build the latest commit:   ./build-gambit
+# To build the latest commit:   ./build-gambit   or   ./build-gambit HEAD
 #
 # To build a specific release:  ./build-gambit v4.8.2
+#
+# To build with special configure options:
+#
+#     ./build-gambit HEAD --enable-single-host CC=gcc-9
 #
 # The oldest release of Gambit that can be build with this script is v4.6.6 .
 
@@ -19,6 +23,45 @@ GIT_URL="https://github.com/gambit/gambit"
 NAME_PREFIX="gambit-"
 VERSION_PREFIX="v"
 VERSION_SUFFIX=""
+DEFAULT_CONFIGURE_OPTIONS="--enable-single-host"
+
+
+build_system()
+{
+  if [ "$CONFIGURE_OPTIONS" == "" ] ; then
+
+    CONFIGURE_OPTIONS="$DEFAULT_CONFIGURE_OPTIONS"
+
+    if git rev-list HEAD | grep $(git rev-parse "27fb40778f76bfabc954f6c064b524bdf18d0a72") ; then
+      # the configure option --enable-targets=... exists
+      CONFIGURE_OPTIONS="$CONFIGURE_OPTIONS --enable-targets=js"
+    fi
+
+  fi
+
+  if git rev-list "$COMMIT" | grep $(git rev-parse "c3e9dafd5757b60baee06ac0cd1e1ebdb30c6fc2") ; then
+    # makefiles support "make modules"
+    HAVE_MAKE_MODULES="yes"
+  else
+    HAVE_MAKE_MODULES="no"
+  fi
+
+  if ! ( ./configure --prefix="$INSTALL_PREFIX" $CONFIGURE_OPTIONS && \
+         make $MAKE_JOBS ) ; then
+    return 1
+  fi
+
+  if [ "$HAVE_MAKE_MODULES" == "yes" ] ; then
+    if ! make $MAKE_JOBS modules ; then
+      return 1
+    fi
+  fi
+
+  if ! ( make check && \
+	 make install ) ; then
+    return 1
+  fi
+}
 
 
 ERROR_MESSAGE="UNKNOWN ERROR"
@@ -26,7 +69,7 @@ ERROR_MESSAGE="UNKNOWN ERROR"
 
 fail_with_message()
 {
-  ERROR_MESSAGE="*** [$NAME_PREFIX$VERSION_PREFIX$VERSION$NCOMMITS] build failed: $1"
+  ERROR_MESSAGE="*** [$NAME_PREFIX$VERSION$NCOMMITS] build failed: $1"
 }
 
 
@@ -50,7 +93,7 @@ get_available_parallelism()
 
 get_available_parallelism
 
-MAKE_PARALLELISM="-j$AVAILABLE_PARALLELISM"
+MAKE_JOBS="-j$AVAILABLE_PARALLELISM"
 
 
 file_exists()
@@ -158,7 +201,7 @@ download()
 
 build()
 {
-  echo "*** [$NAME_PREFIX$VERSION_PREFIX$VERSION$NCOMMITS] starting build"
+  echo "*** [$NAME_PREFIX$VERSION$NCOMMITS] starting build"
 
   if [ "$NCOMMITS" == "" ] ; then
     COMMIT="$VERSION_PREFIX$VERSION$VERSION_SUFFIX"
@@ -171,7 +214,7 @@ build()
     return 1
   fi
 
-  if ! ( ./configure --enable-single-host --prefix="$INSTALL_PREFIX" && time make $MAKE_PARALLELISM && make check && make install ) ; then
+  if ! build_system ; then
     rm -rf "$INSTALL_PREFIX"
     return 1
   fi
@@ -184,7 +227,7 @@ prepare_and_build()
     return 1
   fi
 
-  INSTALL_PREFIX="$INSTALL_ROOT/$NAME_PREFIX$VERSION_PREFIX$VERSION$NCOMMITS"
+  INSTALL_PREFIX="$INSTALL_ROOT/$NAME_PREFIX$VERSION$NCOMMITS"
 
   if file_exists "$INSTALL_PREFIX" ; then
     ERROR_MESSAGE="can't overwrite existing install directory: $INSTALL_PREFIX"
@@ -231,9 +274,13 @@ DESCR="`echo \"$1\" | sed -e \"s/^[^-]*-//g\"`"
 
 descr_to_version_and_ncommits
 
+shift
+
+CONFIGURE_OPTIONS="$*"
+
 if ! main ; then
   echo "$ERROR_MESSAGE"
   exit 1
 fi
 
-echo "*** [$NAME_PREFIX$VERSION_PREFIX$VERSION$NCOMMITS] build succeeded"
+echo "*** [$NAME_PREFIX$VERSION$NCOMMITS] build succeeded"

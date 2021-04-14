@@ -2,11 +2,9 @@
 
 # File: "build-gcc"
 
-# Usage: ./build-gcc gcc-8.2.0
+# Usage: ./build-gcc gcc-10.2.0
 #
-# to build the highest available version:
-#
-# Usage: ./build-gcc
+# to build the highest available version:   ./build-gcc
 
 GCC_FTP_URL="ftp://ftp.gnu.org/gnu/gcc/"
 GMP_FTP_URL="ftp://ftp.gnu.org/gnu/gmp/"
@@ -43,7 +41,7 @@ get_available_parallelism()
 
 get_available_parallelism
 
-MAKE_PARALLELISM="-j$AVAILABLE_PARALLELISM"
+MAKE_JOBS="-j$AVAILABLE_PARALLELISM"
 
 
 file_exists()
@@ -210,7 +208,7 @@ build_all()
 
   cd "$GCC_VERSION-build"
 
-  if ! ( "../$GCC_VERSION-sources/configure" --prefix="$INSTALL_PREFIX" --disable-multilib && time make $MAKE_PARALLELISM bootstrap && make install ) ; then
+  if ! ( "../$GCC_VERSION-sources/configure" --prefix="$INSTALL_PREFIX" --disable-multilib $CONFIGURE_OPTIONS && time make $MAKE_JOBS bootstrap && make install ) ; then
     rm -rf "$INSTALL_PREFIX"
     cd ..
     return 1
@@ -256,25 +254,30 @@ check()
 main()
 {
   INSTALL_ROOT="`pwd`"
+  TEMP_DIR=".build-gcc-$$"
 
-  mkdir ".temp-$$"
+  mkdir "$TEMP_DIR"
 
-  cd ".temp-$$"
+  cd "$TEMP_DIR"
 
   if ! check ; then
 
-    rm -rf ".temp-$$"
+    rm -rf "$TEMP_DIR"
     return 1
 
   fi
 
   cd ..
 
-  rm -rf ".temp-$$"
+  rm -rf "$TEMP_DIR"
 }
 
 
 GCC_VERSION="$1"
+
+shift
+
+CONFIGURE_OPTIONS="$*"
 
 if ! main ; then
   echo "$ERROR_MESSAGE"
