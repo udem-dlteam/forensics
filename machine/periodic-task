@@ -539,6 +539,14 @@ perform_task()
 {
   echo "######## `date`: $KIND periodic task"
 
+  if ! file_exists "system-repos" ; then
+    mkdir "system-repos"
+  fi
+
+  if ! file_exists "system-builds" ; then
+    mkdir "system-builds"
+  fi
+
   TASK_SET_DIR="system-builds/.task-set-$$"
 
   begin_task_set
