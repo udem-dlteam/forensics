@@ -1,0 +1,7 @@
+#! /bin/bash
+
+# File: "stop"
+
+# Usage: ./stop
+
+crontab -r
