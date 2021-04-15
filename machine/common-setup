@@ -7,6 +7,12 @@ FORENSICS_DIR="`pwd`"
 
 MAIN_BRANCHES="main master"
 
+BUILD_RESULTS_FIELDS="\"system-name\",\"system-shortname\",\"system-desc\",\"system-url\",\"system-icon\",\"system-setup\",\"commit-name\",\"commit-branch\",\"commit-timestamp\",\"commit-author\",\"commit-desc\",\"commit-url\",\"config-name\",\"config-shortname\",\"config-desc\",\"config-setup\",\"machine-name\",\"machine-shortname\",\"machine-setup\",\"machine-specs\",\"build-timestamp\",\"build-result\""
+
+RUN_CONTEXT_FIELDS="\"system-name\",\"commit-name\",\"config-name\",\"usage-name\",\"usage-setup\",\"machine-name\",\"run-start-timestamp\",\"run-end-timestamp\""
+
+RUN_RESULTS_FIELDS="\"benchmark-name\",\"run-result\""
+
 # Define the PATH to find gcc and related tools (it is best to build a
 # specific version of gcc with: "cd compilers;./build-gcc gcc-10.2.0").
 
@@ -14,13 +20,6 @@ PATH="$FORENSICS_DIR/compilers/gcc-10.2.0/bin:$PATH"
 
 # Define which commits to use (the references to dates and times are in
 # the format of the "date -d..." command).
-
-DATE1="-30 days"
-DATE2="-30 days"
-DATE3="-30 days"
-SPACING1="1 days"
-SPACING2="1 days"
-SPACING3="1 days"
 
 DATE1="-2 years"      # starting from 2 years ago
 SPACING1="30 days"    # use commits at least 30 days apart

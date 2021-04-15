@@ -13,16 +13,31 @@ for b in *.py ; do
 
   NAME="`echo \"$b\" | sed -e 's/.py\$//'`"
 
-  EXEC1="`echo \"1.5 seconds: \" | grep \" seconds[ :]\" | sed -e \"s@ .*@@g\"`"
+  TOTAL="0"
+  NRUNS="0"
+  RESULT=""
 
-  if test "$EXEC1" == "" ; then
+  while true ; do
+
+    EXEC_TIME="`$SYSTEM \"$NAME.py\" | grep \" seconds[ :]\" | sed -e \"s@ .*@@g\"`"
+
+    if test "$EXEC_TIME" = "" ; then
+      break
+    fi
+
+    RESULT="$RESULT$EXEC_TIME "
+
+    TOTAL="`echo \"$TOTAL + $EXEC_TIME\" | bc`"
+    NRUNS="`echo \"$NRUNS + 1\" | bc`"
+
+    if test "`echo \"$TOTAL > 10\" | bc`" = "1" -o "$NRUNS" = "10" ; then
+      break
+    fi
+
+  done
+
+  if test "$NRUNS" = "0" ; then
     RESULT="CRASHED"
-  else
-    EXEC2="`echo \"1.5 seconds: \" | grep \" seconds[ :]\" | sed -e \"s@ .*@@g\"`"
-    EXEC3="`echo \"1.5 seconds: \" | grep \" seconds[ :]\" | sed -e \"s@ .*@@g\"`"
-    EXEC4="`echo \"1.5 seconds: \" | grep \" seconds[ :]\" | sed -e \"s@ .*@@g\"`"
-    EXEC5="`echo \"1.5 seconds: \" | grep \" seconds[ :]\" | sed -e \"s@ .*@@g\"`"
-    RESULT="$EXEC1 $EXEC2 $EXEC3 $EXEC4 $EXEC5"
   fi
 
   echo '+!CSVLINE!+',"$NAME","$RESULT"

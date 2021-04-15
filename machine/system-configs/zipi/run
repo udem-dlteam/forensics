@@ -2,10 +2,12 @@ PATH=$INSTALL_DIR/bin:$PATH
 
 zipi -X reset
 
-(cd "$FORENSICS_DIR/zipi-benchmarks" ; ./bench zipi 2>&1 > "$USAGE_DIR/.forensics-run-results-raw")
+(cd "$FORENSICS_DIR/benchmarks/zipi" ; ./bench zipi 2>&1 > "$USAGE_DIR/.forensics-run-results-raw")
 
 cat "$USAGE_DIR/.forensics-run-results-raw"
 
-fgrep '+!CSVLINE!+' "$USAGE_DIR/.forensics-run-results-raw" | sed -e "s@^[^,]*,@zipi/@g" -e "s@:[^,]*,@,@g" > "$USAGE_DIR/.forensics-run-results"
+echo "$RUN_RESULTS_FIELDS" > "$USAGE_DIR/.forensics-run-results"
+
+fgrep '+!CSVLINE!+' "$USAGE_DIR/.forensics-run-results-raw" | sed -e "s@^[^,]*,@zipi/@g" -e "s@:[^,]*,@,@g" >> "$USAGE_DIR/.forensics-run-results"
 
 rm "$USAGE_DIR/.forensics-run-results-raw"

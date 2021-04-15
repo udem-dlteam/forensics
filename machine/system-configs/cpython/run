@@ -4,6 +4,8 @@ PATH=$INSTALL_DIR/bin:$PATH
 
 cat "$USAGE_DIR/.forensics-run-results-raw"
 
-fgrep '+!CSVLINE!+' "$USAGE_DIR/.forensics-run-results-raw" | sed -e "s@^[^,]*,@zipi/@g" -e "s@:[^,]*,@,@g" > "$USAGE_DIR/.forensics-run-results"
+echo "$RUN_RESULTS_FIELDS" > "$USAGE_DIR/.forensics-run-results"
+
+fgrep '+!CSVLINE!+' "$USAGE_DIR/.forensics-run-results-raw" | sed -e "s@^[^,]*,@zipi/@g" -e "s@:[^,]*,@,@g" >> "$USAGE_DIR/.forensics-run-results"
 
 rm "$USAGE_DIR/.forensics-run-results-raw"

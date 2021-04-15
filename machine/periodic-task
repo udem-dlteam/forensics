@@ -331,10 +331,8 @@ create_build_script()
   echo "cd \"$FORENSICS_DIR\""        >> "$SCRIPT_FILE"
   echo "source \"$FORENSICS_DIR/common-setup\"" >> "$SCRIPT_FILE"
   echo "cd \"\$INSTALL_DIR/.forensics-build\"" >> "$SCRIPT_FILE"
-  cat "$FORENSICS_DIR/common-build-setup" >> "$SCRIPT_FILE"
-  echo ""                             >> "$SCRIPT_FILE"
-  cat "$FORENSICS_DIR/system-configs/$SYSTEM/setup" >> "$SCRIPT_FILE"
-  echo ""                             >> "$SCRIPT_FILE"
+  echo "source \"$FORENSICS_DIR/common-build-setup\"" >> "$SCRIPT_FILE"
+  echo "source \"$FORENSICS_DIR/system-configs/$SYSTEM/setup\"" >> "$SCRIPT_FILE"
   cat "$FORENSICS_DIR/system-configs/$SYSTEM/configs/$CONFIG" >> "$SCRIPT_FILE"
   echo ""                             >> "$SCRIPT_FILE"
   echo "BUILD_START_TIME=\"\`date +%s\`\"" >> "$SCRIPT_FILE"
@@ -380,12 +378,11 @@ create_run_script()
   echo "cd \"$FORENSICS_DIR\""        >> "$SCRIPT_FILE"
   echo "source \"$FORENSICS_DIR/common-setup\"" >> "$SCRIPT_FILE"
   echo "cd \"$FORENSICS_DIR/$CONFIG_DIR/.forensics-usage/$USAGE\"" >> "$SCRIPT_FILE"
-  cat "$FORENSICS_DIR/common-build-setup" >> "$SCRIPT_FILE"
-  echo ""                             >> "$SCRIPT_FILE"
-  cat "$FORENSICS_DIR/system-configs/$SYSTEM/setup" >> "$SCRIPT_FILE"
-  echo ""                             >> "$SCRIPT_FILE"
+  echo "source \"$FORENSICS_DIR/common-build-setup\"" >> "$SCRIPT_FILE"
+  echo "source \"$FORENSICS_DIR/system-configs/$SYSTEM/setup\"" >> "$SCRIPT_FILE"
   cat "$FORENSICS_DIR/system-configs/$SYSTEM/configs/$CONFIG" >> "$SCRIPT_FILE"
   echo ""                             >> "$SCRIPT_FILE"
+  echo "source \"$FORENSICS_DIR/common-run-setup\"" >> "$SCRIPT_FILE"
   cat "$FORENSICS_DIR/system-configs/$SYSTEM/usages/$USAGE" >> "$SCRIPT_FILE"
   echo ""                             >> "$SCRIPT_FILE"
   echo "RUN_START_TIME=\"\`date +%s\`\"" >> "$SCRIPT_FILE"
@@ -433,6 +430,8 @@ add_build_and_run_as_needed()
     add_parallel_task "$BUILD_SCRIPT_FILE"
 
   fi
+
+  get_common_run_setup
 
   for USAGE in $CURRENT_USAGES ; do
 
@@ -559,6 +558,8 @@ check_for_new_commits()
 get_system_setup()
 {
   GIT_REPO_URL=""
+  GIT_REPO_COMMIT_URL=""
+  AGGREGATOR_URLS=""
   source "system-configs/$SYSTEM/setup"
 }
 

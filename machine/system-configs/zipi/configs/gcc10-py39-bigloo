@@ -7,6 +7,4 @@ $PATH
 
 BUILDPYTHON="python3.9"
 
-BRANCH="master"
-
 CONFIGURE_OPTIONS="--buildpython=$BUILDPYTHON --bigloo-only"

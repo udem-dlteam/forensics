@@ -1,3 +1,6 @@
 echo "RUN_START_TIME=$RUN_START_TIME RUN_END_TIME=$RUN_END_TIME"
 
-( echo "\"$SYSTEM\",\"$COMMIT\",\"$CONFIG\",\"$USAGE\",`cat \"$FORENSICS_DIR/system-configs/$SYSTEM/usages/$USAGE\" | $FORENSICS_DIR/stringify`,\"`hostname`.iro.umontreal.ca\",\"$RUN_START_TIME\",\"$RUN_END_TIME\"" ) 2> /dev/null > "$USAGE_DIR/.forensics-run-context"
+( \
+echo "$RUN_CONTEXT_FIELDS" ; \
+echo "\"$SYSTEM\",\"$COMMIT\",\"$CONFIG\",\"$USAGE\",`cat \"$FORENSICS_DIR/system-configs/$SYSTEM/usages/$USAGE\" | $FORENSICS_DIR/stringify`,\"`hostname`\",\"$RUN_START_TIME\",\"$RUN_END_TIME\"" \
+) 2> /dev/null > "$USAGE_DIR/.forensics-run-context"
