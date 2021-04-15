@@ -5,6 +5,8 @@
 
 FORENSICS_DIR="`pwd`"
 
+MAIN_BRANCHES="main master"
+
 # Define the PATH to find gcc and related tools (it is best to build a
 # specific version of gcc with: "cd compilers;./build-gcc gcc-10.2.0").
 

@@ -13,8 +13,18 @@ for b in *.py ; do
 
   NAME="`echo \"$b\" | sed -e 's/.py\$//'`"
 
-  if ! ( $SYSTEM "$NAME.py" | grep " seconds[ :]" | sed -e "s@ .*@@g" -e "s@^@+\!CSVLINE\!+,$NAME,@" ) ; then
-    echo "+\!CSVLINE\!+,$NAME,CRASHED"
+  EXEC1="`echo \"1.5 seconds: \" | grep \" seconds[ :]\" | sed -e \"s@ .*@@g\"`"
+
+  if test "$EXEC1" == "" ; then
+    RESULT="CRASHED"
+  else
+    EXEC2="`echo \"1.5 seconds: \" | grep \" seconds[ :]\" | sed -e \"s@ .*@@g\"`"
+    EXEC3="`echo \"1.5 seconds: \" | grep \" seconds[ :]\" | sed -e \"s@ .*@@g\"`"
+    EXEC4="`echo \"1.5 seconds: \" | grep \" seconds[ :]\" | sed -e \"s@ .*@@g\"`"
+    EXEC5="`echo \"1.5 seconds: \" | grep \" seconds[ :]\" | sed -e \"s@ .*@@g\"`"
+    RESULT="$EXEC1 $EXEC2 $EXEC3 $EXEC4 $EXEC5"
   fi
+
+  echo '+!CSVLINE!+',"$NAME","$RESULT"
 
 done
