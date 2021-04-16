@@ -615,6 +615,9 @@ perform_task()
 
   # run builds concurrently
   run_task_set
+
+  # report results
+  ./report-all-results "$KIND"
 }
 
 

@@ -1,0 +1,15 @@
+#! /bin/bash
+
+# File: "report-all-results"
+
+# This shell script is run periodically by the periodic-task script.
+# The first parameter is either "minor" or "major", indicating the
+# type of periodic task (major is run every hour, and minor every minute).
+
+KIND="$1"
+
+echo "running report-all-results... KIND=$KIND"
+
+source common-setup
+
+echo $FORENSICS_DIR/venv/bin/python3 -m forensics.collector --conf /path/to/conf --batch-all "$FORENSICS_DIR/system-builds"

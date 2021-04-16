@@ -16,7 +16,12 @@ RUN_RESULTS_FIELDS="\"benchmark-name\",\"run-result\""
 # Define the PATH to find gcc and related tools (it is best to build a
 # specific version of gcc with: "cd compilers;./build-gcc gcc-10.2.0").
 
-PATH="$FORENSICS_DIR/compilers/gcc-10.2.0/bin:$PATH"
+PATH=\
+$FORENSICS_DIR/compilers/gcc-10.2.0/bin:\
+$FORENSICS_DIR/compilers/gambit-4.9.3-1352/bin:\
+$FORENSICS_DIR/compilers/bigloo-4.4b/bin:\
+$FORENSICS_DIR/compilers/cpython-3.9.0/bin:\
+$PATH
 
 # Define which commits to use (the references to dates and times are in
 # the format of the "date -d..." command).
