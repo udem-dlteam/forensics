@@ -23,6 +23,8 @@ To collect data:
 python -m forensics.collector --conf /path/to/conf --batch-all /path/to/system-builds
 ```
 
+To log output to stdout instead of a file, use the `-v` or `--verbose` flag.
+
 ## Aggregator
 
 TODO
