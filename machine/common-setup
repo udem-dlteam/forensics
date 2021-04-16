@@ -34,3 +34,5 @@ SPACING3=""           # use all commits
 # minor tasks).
 
 MAJOR_TASK_PERIOD="1 hours"  # 1 hour between major tasks
+
+MAX_TASKS_PER_BRANCH="2"

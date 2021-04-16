@@ -206,6 +206,7 @@ for_each_commit()
 
   for BRANCH in $ALL_BRANCHES ; do
 
+    NB_TASKS_FOR_THIS_BRANCH="0"
     IS_A_MAIN_BRANCH="no"
 
     for m in $MAIN_BRANCHES ; do
@@ -273,11 +274,16 @@ for_each_commit()
         COMMIT_BRANCH="$BRANCH"
 
         export FORENSICS_DIR REPO_DIR BUILD_DIR SYSTEM CONFIG COMMIT COMMIT_TIME COMMIT_BRANCH
-        SELECT="`cd \"system-repos/$SYSTEM\" ; ../../system-configs/$SYSTEM/filter $COMMIT $COMMIT_TIME $CONFIG $SYSTEM`"
+
+        SELECT="`cd \"system-repos/$SYSTEM\" ; ../../system-configs/$SYSTEM/filter $COMMIT $COMMIT_TIME $COMMIT_BRANCH $CONFIG $SYSTEM`"
+
         if [ "$SELECT" == "1" ] ; then
-          echo "================== SYSTEM=$SYSTEM CONFIG=$CONFIG COMMIT=$COMMIT COMMIT_BRANCH=$COMMIT_BRANCH"
-            $1
+          echo "================== SYSTEM=$SYSTEM CONFIG=$CONFIG COMMIT=$COMMIT COMMIT_TIME=$COMMIT_TIME COMMIT_BRANCH=$COMMIT_BRANCH"
+          $1
           NEXT_SELECTED_COMMIT_TIME="$COMMIT_TIME"
+          if [ "$(($NB_TASKS_FOR_THIS_BRANCH >= $MAX_TASKS_PER_BRANCH))" == 1 ] ; then
+            break
+          fi
         else
           if [ "$SELECT" != "0" ] ; then
             break
@@ -429,6 +435,8 @@ add_build_and_run_as_needed()
 
     add_parallel_task "$BUILD_SCRIPT_FILE"
 
+    NB_TASKS_FOR_THIS_BRANCH=$(($NB_TASKS_FOR_THIS_BRANCH + 1))
+
   fi
 
   get_common_run_setup
@@ -466,6 +474,8 @@ add_build_and_run_as_needed()
       mkdir "$USAGE_DIR"
 
       add_sequential_task "$RUN_SCRIPT_FILE"
+
+      NB_TASKS_FOR_THIS_BRANCH=$(($NB_TASKS_FOR_THIS_BRANCH + 1))
 
     fi
 
