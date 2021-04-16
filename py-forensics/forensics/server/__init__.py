@@ -1,8 +1,6 @@
+import configparser
 
-from model import System, Commit, Config, Usage, Benchmark, Machine, Build, Run
-from pony.orm import select
-from datetime import datetime
-
+from forensics.models import *
 
 # ==========================================
 # ============== FLASK API =================
@@ -10,25 +8,13 @@ from datetime import datetime
 
 from flask import Flask
 from flask_caching import Cache
+from flask_cors import CORS, cross_origin
+from flask_restful import Api, Resource
 from pony.flask import Pony
 
-# wrapper for db_session
-app = Flask(__name__)
-Pony(app)
-
 # TODO Use global Flask app config
-cache = Cache(config={'CACHE_TYPE': 'SimpleCache'})
-cache.init_app(app)
+cache = Cache(config={"CACHE_TYPE": "SimpleCache"})
 
-# cors
-from flask_cors import CORS, cross_origin
-CORS(app)
-app.config['CORS_HEADERS'] = 'Content-Type'
-
-
-# rest api
-from flask_restful import Api, Resource
-api = Api(app)
 
 class APILegacy(Resource):
     @cache.cached(timeout=60)
@@ -46,7 +32,12 @@ class APILegacy(Resource):
             # Commit name
             tags.append(sys.name + "-version")
             commits_name = list(map(lambda x: x.name, sys.commits))
-            meta = list(map(lambda x : f"name : {x.name}\ntime : {x.timestamp}\n description : {x.description}\n", sys.commits))
+            meta = list(
+                map(
+                    lambda x: f"name : {x.name}\ntime : {x.timestamp}\n description : {x.description}\n",
+                    sys.commits,
+                )
+            )
             options.append(commits_name)
 
             # build name
@@ -59,11 +50,11 @@ class APILegacy(Resource):
             all_benchmarks = select(x for x in Benchmark)
             benchmarks = all_benchmarks
 
-            #for bench in all_benchmarks:
+            # for bench in all_benchmarks:
             #    if sys in map(lambda x : x.build.system, bench.runs):
             #        benchmarks.append(bench)
 
-            options.append(list(map(lambda x : x.name, benchmarks)))
+            options.append(list(map(lambda x: x.name, benchmarks)))
 
             tags.append("measure")
             options.append(measures)
@@ -78,7 +69,14 @@ class APILegacy(Resource):
                     config_data = []
                     for bench in benchmarks:
                         bench_data = []
-                        results = select(d for d in Run if d.build.config == config and d.build.commit == commit and d.build.system == sys and d.benchmark == bench)
+                        results = select(
+                            d
+                            for d in Run
+                            if d.build.config == config
+                            and d.build.commit == commit
+                            and d.build.system == sys
+                            and d.benchmark == bench
+                        )
                         results = list(results)
                         if len(results) != 0:
                             bench_data.append([results[0].result])
@@ -87,20 +85,19 @@ class APILegacy(Resource):
                     commit_data.append(config_data)
                 data.append(commit_data)
 
-
-            return_value.append({
-                'name' : name,
-                'measures' : measures,
-                'tags' : tags,
-                'options' : options,
-                'data' : data,
-                'metas' : meta
-            })
+            return_value.append(
+                {
+                    "name": name,
+                    "measures": measures,
+                    "tags": tags,
+                    "options": options,
+                    "data": data,
+                    "metas": meta,
+                }
+            )
 
         return return_value
 
-
-api.add_resource(APILegacy, "/legacy")
 
 # ========================================
 # ===== FOLLOWING CODE IS NOT USED TO ====
@@ -145,26 +142,39 @@ If we call to_json(Build), we get:
 Note here that runs is completely copied and jsonified, but system
   and commit is only shown as their name
 """
-def jsonify(deep = [], shallow = []):
+
+
+def jsonify(deep=[], shallow=[]):
     def closure(elem):
-        return {attr : to_json(getattr(elem, attr)) for attr in deep} | \
-               {attr[0] : to_json(getattr(getattr(elem, attr[0]), attr[1])) for attr in shallow}
+        return {attr: to_json(getattr(elem, attr)) for attr in deep} | {
+            attr[0]: to_json(getattr(getattr(elem, attr[0]), attr[1]))
+            for attr in shallow
+        }
+
     return closure
 
+
 METHODS = {
-        System: jsonify(["name", "shortname", "description", "icon", "configs", "commits"]),
-        Commit: jsonify(["name", "description", "builds"]),
-        Config: jsonify(["name", "shortname", "description", "builds"]),
-        Build: jsonify(["timestamp", "result", "runs"], [("system", "name"), ("commit", "name")]),
-
-        Machine: jsonify(["id", "name", "shortname", "description", "setup", "specs", "builds"]),
-        Run: jsonify(["id", "timestamp", "result", "usage", "benchmark" ], [("build", "id")]),
-        Benchmark: jsonify(["id", "name", "description", "setup"]),
-        Usage: jsonify(["id", "name", "shortname", "description", "setup"], [("system", "name"), ("runs", "id")]),
-
-        str: lambda x : x,
-        int: lambda x : x,
-        datetime: lambda x: str(x)
+    System: jsonify(["name", "shortname", "description", "icon", "configs", "commits"]),
+    Commit: jsonify(["name", "description", "builds"]),
+    Config: jsonify(["name", "shortname", "description", "builds"]),
+    Build: jsonify(
+        ["timestamp", "result", "runs"], [("system", "name"), ("commit", "name")]
+    ),
+    Machine: jsonify(
+        ["id", "name", "shortname", "description", "setup", "specs", "builds"]
+    ),
+    Run: jsonify(
+        ["id", "timestamp", "result", "usage", "benchmark"], [("build", "id")]
+    ),
+    Benchmark: jsonify(["id", "name", "description", "setup"]),
+    Usage: jsonify(
+        ["id", "name", "shortname", "description", "setup"],
+        [("system", "name"), ("runs", "id")],
+    ),
+    str: lambda x: x,
+    int: lambda x: x,
+    datetime: lambda x: str(x),
 }
 
 
@@ -176,16 +186,17 @@ def to_json(obj):
     return "JSON cannot be applied on " + str(type(obj))
 
 
-
 class APISystem(Resource):
     def get(self):
         sys = select(x for x in System)
         return to_json(sys)
 
+
 class APIConfig(Resource):
     def get(self, system):
         config = select(x for x in Config if x.system.name == system)
         return to_json(config)
+
 
 class APIMachine(Resource):
     def get(self):
@@ -193,7 +204,32 @@ class APIMachine(Resource):
         return to_json(machine)
 
 
-api.add_resource(APISystem, "/systems")
-api.add_resource(APIConfig, "/systems/<string:system>")
-api.add_resource(APIMachine, "/machines")
+# App factory
+def create_app(config):
 
+    if isinstance(config, str):
+        import os
+
+        _config = config
+        config = configparser.ConfigParser()
+        config.read(os.path.expanduser(_config))
+
+    # wrapper for db_session
+    app = Flask(__name__)
+    Pony(app)
+
+    cache.init_app(app)
+
+    CORS(app)
+    app.config["CORS_HEADERS"] = "Content-Type"
+
+    api = Api(app)
+    api.add_resource(APILegacy, "/legacy")
+    api.add_resource(APISystem, "/systems")
+    api.add_resource(APIConfig, "/systems/<string:system>")
+    api.add_resource(APIMachine, "/machines")
+
+    db.bind(provider="sqlite", filename=config["SERVER"]["database"])
+    db.generate_mapping(create_tables=False)
+
+    return app
