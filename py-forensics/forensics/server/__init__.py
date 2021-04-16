@@ -81,7 +81,7 @@ class APILegacy(Resource):
                             and d.benchmark == bench
                         )
                         results = list(results)
-                        to_append = 0
+                        to_append = "0"
                         if len(results) != 0:
                             split_res = results[0].result.split(" ")
 
@@ -89,7 +89,7 @@ class APILegacy(Resource):
                             if all(map(str_is_float, split_res)):
                                 to_append = split_res[0]
 
-                        bench_data.append([str(to_append)])
+                        bench_data.append([to_append])
 
                         config_data.append(bench_data)
                     commit_data.append(config_data)
