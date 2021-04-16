@@ -138,7 +138,7 @@ def db_connect(config):
     if isinstance(config, str):
         _config = config
         config = configparser.ConfigParser()
-        config.read(_config)
+        config.read(os.path.expanduser(_config))
 
     db.bind(provider="sqlite", filename=config["SERVER"]["database"])
     db.generate_mapping(create_tables=False)

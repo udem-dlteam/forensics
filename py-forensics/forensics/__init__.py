@@ -1,3 +1,4 @@
+import os
 import logging
 import configparser
 
@@ -6,7 +7,7 @@ def init_logger(config):
     if isinstance(config, str):
         _config = config
         config = configparser.ConfigParser()
-        config.read(_config)
+        config.read(os.path.expanduser(_config))
 
     logger = logging.getLogger("forensics")
 

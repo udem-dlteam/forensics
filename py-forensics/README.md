@@ -43,3 +43,18 @@ gunicorn -w4 -b localhost:8080 'forensics.server:create_app("/path/to/conf")'
 ```
 
 It should work with any other WSGI server.
+
+## Viewing results
+
+Instructions when starting from scratch:
+
+- Install this package in a virtualenv: `pip install -e .`.
+- Copy `tempaltes/example.conf` somewhere and edit it with the absolute paths of
+  the log file and database.
+- Initialize the database with `python -m forensics.collector --conf
+  /path/to/conf --init`.
+- Collect the data: `python -m forensics.collector --conf /path/to/conf
+  --batch-all /path/to/system-builds`
+- Start the server: `gunicorn -w4 -b localhost:3002
+  'forensics.server:create_app("/path/to/conf")'`.
+- Visit [the forensics web UI](https://udem-dlteam.github.io/forensics).
