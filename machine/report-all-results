@@ -12,4 +12,12 @@ echo "running report-all-results... KIND=$KIND"
 
 source common-setup
 
-echo $FORENSICS_DIR/venv/bin/python3 -m forensics.collector --conf /path/to/conf --batch-all "$FORENSICS_DIR/system-builds"
+rm -f "$FORENSICS_DIR/forensics.db"
+
+$FORENSICS_DIR/compilers/venv/bin/python3 -m forensics.collector --conf "$FORENSICS_DIR/forensics.conf" --init
+
+time $FORENSICS_DIR/compilers/venv/bin/python3 -m forensics.collector --conf "$FORENSICS_DIR/forensics.conf" --batch-all "$FORENSICS_DIR/system-builds"
+
+ls -l "$FORENSICS_DIR/forensics.db"
+
+scp -P 443 forensics.db "gambitscheme.org:/usr/local/var/www/zipi-forensics/results/`hostname`.db"

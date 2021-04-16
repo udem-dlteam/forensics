@@ -18,3 +18,15 @@ python3 -m venv "$FORENSICS_DIR/compilers/venv"
 echo "##### Installing forensics.collector"
 
 $FORENSICS_DIR/compilers/venv/bin/pip install -e $FORENSICS_DIR/../py-forensics
+
+cat <<EOF > "$FORENSICS_DIR/forensics.conf"
+[DEFAULT]
+log_file=$FORENSICS_DIR/forensics.log
+log_level=DEBUG
+
+[SERVER]
+database=$FORENSICS_DIR/forensics.db
+
+[BENCHMARK]
+foo=bar
+EOF
