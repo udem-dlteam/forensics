@@ -13,13 +13,14 @@ parser.add_argument("-b", "--batch", nargs=1, help="path to system directory")
 parser.add_argument(
     "-ba", "--batch-all", nargs=1, help="path to gambit-forensics root directory"
 )
+parser.add_argument("-v", "--verbose", action="store_true", help="log to stdout")
 
 args = parser.parse_args()
 
 config = configparser.ConfigParser()
 config.read(args.conf)
 
-logger = init_logger(config)
+logger = init_logger(config, args.verbose)
 
 
 def batch_insert(system):
