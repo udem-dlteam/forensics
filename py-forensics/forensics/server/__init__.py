@@ -15,6 +15,9 @@ from pony.flask import Pony
 # TODO Use global Flask app config
 cache = Cache(config={"CACHE_TYPE": "SimpleCache"})
 
+# taken here : https://stackoverflow.com/questions/354038/how-do-i-check-if-a-string-is-a-number-float
+def str_is_float(s):
+    return s.replace('.','',1).isdigit()
 
 class APILegacy(Resource):
     @cache.cached(timeout=60)
@@ -78,8 +81,15 @@ class APILegacy(Resource):
                             and d.benchmark == bench
                         )
                         results = list(results)
+                        to_append = 0
                         if len(results) != 0:
-                            bench_data.append([results[0].result])
+                            split_res = results[0].result.split(" ")
+
+                            # check if all values are numbers
+                            if all(map(str_is_float, split_res)):
+                                to_append = split_res[0]
+
+                        bench_data.append([str(to_append)])
 
                         config_data.append(bench_data)
                     commit_data.append(config_data)
@@ -92,7 +102,7 @@ class APILegacy(Resource):
                     "tags": tags,
                     "options": options,
                     "data": data,
-                    "metas": meta,
+                    "meta": meta,
                 }
             )
 
