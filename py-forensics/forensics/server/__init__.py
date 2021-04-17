@@ -32,13 +32,15 @@ class APILegacy(Resource):
             options = []
             meta = []
 
+            commits = sorted(sys.commits, key=lambda x : x.timestamp);
+
             # Commit name
             tags.append(sys.name + "-version")
-            commits_name = list(map(lambda x: x.name, sys.commits))
+            commits_name = list(map(lambda x: x.timestamp.strftime("%m/%d/%-y %H:%M ") + x.name, commits))
             meta = list(
                 map(
                     lambda x: f"name : {x.name}\ntime : {x.timestamp}\n description : {x.description}\n",
-                    sys.commits,
+                    commits,
                 )
             )
             options.append(commits_name)
@@ -65,8 +67,9 @@ class APILegacy(Resource):
             tags.append("stat")
             options.append(["mean", "sd"])
 
+
             data = []
-            for commit in sys.commits:
+            for commit in commits:
                 commit_data = []
                 for config in sys.configs:
                     config_data = []
@@ -83,6 +86,7 @@ class APILegacy(Resource):
                         results = list(results)
                         to_append = "0"
                         if len(results) != 0:
+                            to_append = results[0].result
                             split_res = results[0].result.split(" ")
 
                             # check if all values are numbers
