@@ -13,6 +13,8 @@
       <string>'forensics.server:create_app("/Users/forensics/forensics/forensics.conf")'</string>
       <string>--reload-extra-file</string>
       <string>/usr/local/var/www/zipi-forensics/results/arctic.db</string>
+      <string>--pythonpath</string>
+      <string>/Users/forensics/forensics/venv/bin/python</string>
     </array>
     <key>UserName</key>
     <string>forensics</string>
