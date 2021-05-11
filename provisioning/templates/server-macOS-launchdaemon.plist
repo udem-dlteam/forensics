@@ -10,15 +10,19 @@
       <string>-w4</string>
       <string>-b</string>
       <string>localhost:5000</string>
-      <string>'forensics.server:create_app("/Users/forensics/.forensics/forensics.conf")'</string>
+      <string>'forensics.server:create_app("/Users/forensics/forensics/forensics.conf")'</string>
       <string>--reload-extra-file</string>
       <string>/usr/local/var/www/zipi-forensics/results/arctic.db</string>
     </array>
-    <key>RunAtLoad</key>
-    <true/>
+    <key>UserName</key>
+    <string>forensics</string>
     <key>WatchPaths</key>
     <array>
       <string>/Users/forensics/forensics</string>
     </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
   </dict>
 </plist>
