@@ -118,10 +118,11 @@ def insert_build_results(path):
             url=data["system-url"],
         )
 
-    commit = Commit.get(name=data["commit-name"], system=system)
+    commit = Commit.get(sha=data["commit-hash"], system=system)
     if commit is None:
         commit = Commit(
             name=data["commit-name"],
+            sha=data["commit-hash"],
             description=data["commit-desc"],
             timestamp=datetime.fromtimestamp(int(data["commit-timestamp"])),
             system=system,

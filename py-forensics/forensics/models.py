@@ -38,6 +38,7 @@ class System(db.Entity):
 class Commit(db.Entity):
     id = PrimaryKey(int, auto=True)
     name = Required(str)
+    sha = Required(str)
     description = Required(str)
     timestamp = Required(datetime)
     system = Required(System)

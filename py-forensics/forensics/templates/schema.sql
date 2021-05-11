@@ -28,6 +28,7 @@ CREATE TABLE "System" (
 CREATE TABLE "Commit" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
   "name" TEXT NOT NULL,
+  "sha" TEXT NOT NULL,
   "description" TEXT NOT NULL,
   "timestamp" DATETIME NOT NULL,
   "system" INTEGER NOT NULL REFERENCES "System" ("id") ON DELETE CASCADE,
