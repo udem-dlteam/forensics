@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+    <string>forensics-http</string>
+    <key>ProgramArguments</key>
+    <array>
+      <string>/Users/forensics/forensics/venv/bin/gunicorn</string>
+      <string>-w4</string>
+      <string>-b</string>
+      <string>localhost:5000</string>
+      <string>'forensics.server:create_app("/Users/forensics/.forensics/forensics.conf")'</string>
+      <string>--reload-extra-file</string>
+      <string>/usr/local/var/www/zipi-forensics/results/arctic.db</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>WatchPaths</key>
+    <array>
+      <string>/Users/forensics/forensics</string>
+    </array>
+  </dict>
+</plist>

@@ -1,0 +1,4 @@
+VENV="${PWD}/../venv"
+BIN="${VENV}/bin/"
+PYTHON="${BIN}/python"
+PIP="${BIN}/pip"

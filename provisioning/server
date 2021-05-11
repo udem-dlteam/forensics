@@ -1,0 +1,7 @@
+#! /bin/bash
+
+. server-common
+
+python3 -m venv "${PWD}/../venv"
+
+$PIP install "${PWD}/../py-forensics/"
