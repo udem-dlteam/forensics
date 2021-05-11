@@ -20,7 +20,7 @@
     <string>forensics</string>
     <key>WatchPaths</key>
     <array>
-      <string>/Users/forensics/forensics</string>
+      <string>/Users/forensics/forensics/</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
