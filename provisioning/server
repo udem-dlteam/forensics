@@ -6,7 +6,7 @@ echo "Creating virtualenv..."
 python3 -m venv "${PWD}/../venv"
 
 echo "Installing py-forensics python package..."
-$PIP install "${PWD}/../py-forensics/"
+$PIP install -e "${PWD}/../py-forensics/"
 
 cp "${PWD}/../py-forensics/forensics/templates/example.conf" "${PWD}/../forensics.conf"
 echo "Done. Please edit ${PWD}/../forensics.conf"
