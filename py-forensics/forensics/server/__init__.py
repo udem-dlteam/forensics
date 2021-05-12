@@ -6,11 +6,14 @@ from forensics.models import *
 # ============== FLASK API =================
 # ==========================================
 
-from flask import Flask
+from flask import Flask, Response
 from flask_caching import Cache
 from flask_cors import CORS, cross_origin
-from flask_restful import Api, Resource
+
+from flask.views import MethodView
 from pony.flask import Pony
+
+import json
 
 # TODO Use global Flask app config
 cache = Cache(config={"CACHE_TYPE": "SimpleCache"})
@@ -19,7 +22,7 @@ cache = Cache(config={"CACHE_TYPE": "SimpleCache"})
 def str_is_float(s):
     return s.replace('.','',1).isdigit()
 
-class APILegacy(Resource):
+class APILegacy(MethodView):
     @cache.cached(timeout=60)
     def get(self):
         systems = select(x for x in System)
@@ -110,7 +113,7 @@ class APILegacy(Resource):
                 }
             )
 
-        return return_value
+        return Response(json.dumps(return_value), mimetype="application/json")
 
 
 # ========================================
@@ -200,19 +203,19 @@ def to_json(obj):
     return "JSON cannot be applied on " + str(type(obj))
 
 
-class APISystem(Resource):
+class APISystem(MethodView):
     def get(self):
         sys = select(x for x in System)
         return to_json(sys)
 
 
-class APIConfig(Resource):
+class APIConfig(MethodView):
     def get(self, system):
         config = select(x for x in Config if x.system.name == system)
         return to_json(config)
 
 
-class APIMachine(Resource):
+class APIMachine(MethodView):
     def get(self):
         machine = select(x for x in Machine)
         return to_json(machine)
@@ -237,11 +240,7 @@ def create_app(config):
     CORS(app)
     app.config["CORS_HEADERS"] = "Content-Type"
 
-    api = Api(app)
-    api.add_resource(APILegacy, "/legacy")
-    api.add_resource(APISystem, "/systems")
-    api.add_resource(APIConfig, "/systems/<string:system>")
-    api.add_resource(APIMachine, "/machines")
+    app.add_url_rule('/legacy/', view_func=APILegacy.as_view('legacy'), methods=["GET",])
 
     db.bind(provider="sqlite", filename=config["SERVER"]["database"])
     db.generate_mapping(create_tables=False)

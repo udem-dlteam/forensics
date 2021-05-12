@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+/usr/bin/env python3
 
 from distutils.core import setup
 
@@ -12,7 +12,6 @@ setup(name='forensics',
           'pandas',
           'pony',
           'flask',
-          'flask-restful',
           'flask-cors',
           'flask-caching',
           'gunicorn',
