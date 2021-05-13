@@ -240,7 +240,7 @@ def create_app(config):
     CORS(app)
     app.config["CORS_HEADERS"] = "Content-Type"
 
-    app.add_url_rule('/legacy/', view_func=APILegacy.as_view('legacy'), methods=["GET",])
+    app.add_url_rule('/legacy', view_func=APILegacy.as_view('legacy'), methods=["GET",])
 
     db.bind(provider="sqlite", filename=config["SERVER"]["database"])
     db.generate_mapping(create_tables=False)

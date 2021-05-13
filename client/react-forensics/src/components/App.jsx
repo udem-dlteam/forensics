@@ -51,7 +51,7 @@ const fetchData = (api_url) => {
 */
 
 const fetchData = (api_url) => {
-  return fetch(api_url + "/legacy", {
+  return fetch(api_url + "/legacy/", {
     mode: 'cors',
     method: 'GET'
   }).then(x => x.json()).then((data_list)=> {
