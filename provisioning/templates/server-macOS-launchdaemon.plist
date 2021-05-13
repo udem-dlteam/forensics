@@ -26,5 +26,9 @@
     <true/>
     <key>KeepAlive</key>
     <true/>
+    <key>StandardOutPath</key>
+    <string>/tmp/forensics.stdout</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/forensics.stderr</string>
   </dict>
 </plist>
