@@ -237,7 +237,7 @@ const prettyHover = (i, j, t, errors) => `${t} ± ${
   (errors[i][j]).toFixed(PRECISION)}`;
 
 const percentAndFactorFromPercent = function (percent) {
-    percent = parseInt(percent);
+    percent = parseFloat(percent);
     var div = 1 + percent/100;
     if (div === 0.0) {
         return '';
