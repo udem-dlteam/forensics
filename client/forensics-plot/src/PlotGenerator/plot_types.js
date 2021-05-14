@@ -236,6 +236,26 @@ const linePlot = function (title, xName, xSerie,
 const prettyHover = (i, j, t, errors) => `${t} ± ${
   (errors[i][j]).toFixed(PRECISION)}`;
 
+const percentAndFactorFromPercent = function (percent) {
+    var div = 1 + percent/100;
+    if (div === 0.0) {
+        return '';
+    } else {
+        var factor = 1/div;
+        var precision1 = (percent<-99) ? 1 : 0;
+        var precision2 = (factor<=0.03) ? 3 : (factor<=0.3) ? 2 : 1;
+        return ((percent>=0) ? '+' : '') + percent.toFixed(precision1) + '% (' + factor.toFixed(precision2) + 'x)';
+    }
+}
+
+const percentAndFactorFromRatio = function (value, reference) {
+    if (reference === 0.0) {
+        return '';
+    } else {
+        return percentAndFactorFromPercent((value / reference - 1) * 100);
+    }
+}
+
 const errorFormat = function (dataTemp, errors, traces, traceIdx, ySeries, main) {
   dataTemp.name = traces[traceIdx];
   dataTemp.type = 'scatter';
@@ -467,8 +487,7 @@ const barAnnotatedHor = function (title, xName, xSerie,
     const min = mathUtil.minimum(ySeries[0]);
 
     // Compute labels relative to series minimum
-    labelsCopy = ySeries[0].map(e => `${(e >= 0 ? ' +' : '')
-    + ((e / min - 1) * 100).toFixed(2)}%`);
+    labelsCopy = ySeries[0].map(e => percentAndFactorFromRatio(e, min));
   }
 
 
@@ -520,9 +539,7 @@ const comparator = function (title, xName, xSerie,
     // Add annotations
     if (labels && ySeries.length === 1) {
       // Displays percentage
-      labelsCopy = ySeries[0]
-        .map(x => `${
-          (x > 0 ? ' +' : ' ') + x.toFixed(2)}% `);
+      labelsCopy = ySeries[0].map(x => percentAndFactorFromPercent(x) + ' ');
     }
 
     // Compute range
@@ -551,7 +568,7 @@ const comparator = function (title, xName, xSerie,
   horiz.data.forEach((x) => { x.hoverinfo = 'text'; });
   horiz.data.forEach((x, j) => {
     x.text = x.text
-      .map((y, i) => (`${xSerie[i]} : ${y}%${errors ? ` ± ${errors[j][i].toFixed(PRECISION)} %` : ''}`));
+      .map((y, i) => (`${xSerie[i]} : ${percentAndFactorFromPercent(y)}${errors ? ` ± ${errors[j][i].toFixed(PRECISION)} %` : ''}`));
   });
 
   return horiz;
