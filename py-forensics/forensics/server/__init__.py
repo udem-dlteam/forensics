@@ -220,6 +220,131 @@ class APIMachine(MethodView):
         machine = select(x for x in Machine)
         return to_json(machine)
 
+from flask import request
+"""
+'system' : ['zipi'],
+'zipi-setting' : ['gambit'],
+'zipi-commits' : ['commit1', 'commit2'],
+'benchmark' : ['bench1']
+
+"""
+
+LAYOUT_TO_VARIABLE = {
+        'benchmarks' : '"benchmark"."name"',
+        'commits' : '"build"."commit"."name"',
+        'configs' : '"config"."name"',
+        'system' : '.system.name'
+}
+
+VARIABLES = ['benchmarks', 'commits', 'configs', 'system']
+
+def set_or_add(dic, key, val):
+    if key in dic:
+        dic[key] += [val]
+    else:
+        dic[key] = [val]
+
+
+class APIState(MethodView):
+    def post(self, axisX, axisZ):
+        data = json.loads(request.data)
+
+        sys_name = data['system']
+        sys_config_zipi = data['zipi/config']
+        sys_config_cpython = data['cpython/config']
+        sys_commits_zipi = data['zipi/commit']
+        sys_commits_cpython = data['cpython/commit']
+        sys_bench = data['benchmark']
+
+        print(sys_config_zipi)
+        print(sys_config_cpython)
+
+        pony.orm.set_sql_debug(debug = True, show_values = True)
+       
+        print("name")
+        if(axisZ == ""):
+            aggregation = select(
+                # WARNING : sql injections here
+                [raw_sql('"' + axisX + '"."name"'), run.result]
+                for run in Run if
+                (('zipi' in sys_name and 'zipi' == run.build.system.name 
+                    and run.build.config.name in sys_config_zipi and run.build.commit.name in  sys_commits_zipi) 
+                    or 
+                 ('cpython' in sys_name and 'cpython' == run.build.system.name 
+                     and run.build.config.name in sys_config_cpython and run.build.commit.name in sys_commits_cpython))
+
+                and run.benchmark.name in sys_bench
+            )
+            
+
+        
+        else:
+
+            aggregation = select(
+                    # WARNING : sql injection here, need checks
+                [raw_sql('"' + axisZ + '"."name"'), raw_sql('"' + axisX + '"."name"'), run.result]
+                for run in Run if
+                (('zipi' in sys_name and 'zipi' == run.build.system.name 
+                    and run.build.config.name in sys_config_zipi and run.build.commit.name in  sys_commits_zipi) 
+                    or 
+                 ('cpython' in sys_name and 'cpython' == run.build.system.name 
+                     and run.build.config.name in sys_config_cpython and run.build.commit.name in sys_config_cpython))
+
+                and run.benchmark.name in sys_bench
+            )
+
+
+        result = list(aggregation)
+
+        
+
+        return Response(json.dumps(result), mimetype="application/json")
+
+LAYOUT = {
+    'system':{
+        'type' : 'list',
+        'need' : {
+            'commit' : {
+                'type' : 'list',
+                'class' : Commit
+            },
+            'config' : {
+                'type' : 'list',
+                'class' : Config
+            }
+        },
+        'class' : System
+    },
+    'benchmark':{
+        'type' : 'list',
+        'class' : Benchmark
+    },
+}
+
+def recur(layout):
+    result = {}
+    for key, config in layout.items():
+        result[key] = {
+            'type' : config['type']
+            'options' : list(select(op.name for op in config['class']))
+        }
+
+        if 'need' in config:
+            result['need'] = recur(config['need'])
+    
+    return result
+
+
+class APILayout(MethodView):
+    def get(self):
+        result = dict()
+
+        pony.orm.set_sql_debug(debug = True, show_values = True)
+
+        result = recur(LAYOUT);
+
+        return Response(json.dumps(result), mimetype="application/json")
+
 
 # App factory
 def create_app(config):
@@ -237,10 +362,13 @@ def create_app(config):
 
     cache.init_app(app)
 
-    CORS(app)
+    CORS(app, resources={r"/*": {"origins": "*"}})
     app.config["CORS_HEADERS"] = "Content-Type"
 
-    app.add_url_rule('/legacy/', view_func=APILegacy.as_view('legacy'), methods=["GET",])
+    app.add_url_rule('/legacy', view_func=APILegacy.as_view('legacy'), methods=["GET",])
+    app.add_url_rule('/state/<axisX>', defaults = {'axisZ' : ""}, view_func=APIState.as_view('stateX'), methods=["POST",])
+    app.add_url_rule('/state/<axisX>/<axisZ>', view_func=APIState.as_view('stateXZ'), methods=["POST",])
+    app.add_url_rule('/layout', view_func=APILayout.as_view('layout'), methods=["GET",])
 
     db.bind(provider="sqlite", filename=config["SERVER"]["database"])
     db.generate_mapping(create_tables=False)
