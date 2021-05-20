@@ -244,6 +244,37 @@ def set_or_add(dic, key, val):
     else:
         dic[key] = [val]
 
+LAYOUT = {
+    'system':{
+        'type' : {
+            'commit' : {
+                'type' : 'list',
+                'class' : Commit,
+                'filter' : 
+                    (lambda parent: 
+                        lambda op : op.system.name == parent),
+                'transform' : lambda x : x.name
+            },
+            'config' : {
+                'type' : 'list',
+                'class' : Config,
+                'filter' : 
+                    (lambda parent: 
+                        lambda op : op.system.name == parent),
+                'transform' : lambda x : x.name
+            }
+        },
+        'class' : System,
+        'transform' : lambda x : x.name
+    },
+    'benchmark':{
+        'type' : 'list',
+        'class' : Benchmark,
+        'transform' : lambda x : x.name
+    },
+}
+
+
 
 class APIState(MethodView):
     def post(self, axisX, axisZ):
@@ -300,37 +331,30 @@ class APIState(MethodView):
 
         return Response(json.dumps(result), mimetype="application/json")
 
-LAYOUT = {
-    'system':{
-        'type' : 'list',
-        'need' : {
-            'commit' : {
-                'type' : 'list',
-                'class' : Commit
-            },
-            'config' : {
-                'type' : 'list',
-                'class' : Config
-            }
-        },
-        'class' : System
-    },
-    'benchmark':{
-        'type' : 'list',
-        'class' : Benchmark
-    },
-}
-
-def recur(layout):
+def recur(layout, parent):
     result = {}
     for key, config in layout.items():
-        result[key] = {
-            'type' : config['type']
-            'options' : list(select(op.name for op in config['class']))
-        }
+        if config['type'] == 'list':
+            print('class :', config['class'])
+            query = select(op for op in config['class'])
+            if 'filter' in config:
+                query.where(config['filter'](parent))
 
-        if 'need' in config:
-            result['need'] = recur(config['need'])
+            if 'transform' in config:
+                query = map(config['transform'], query)
+
+            result[key] = {
+                'type' : config['type'],
+                'options' : list(query)
+            }
+
+        elif type(config['type']) == dict:
+            result[key] = {}
+            result[key]['type'] = {}
+            pos_values = list(select(op.name for op in config['class']))
+            print(pos_values)
+            for val in pos_values:
+                result[key]['type'][val] = recur(config['type'], val)
     
     return result
 
@@ -341,7 +365,9 @@ class APILayout(MethodView):
 
         pony.orm.set_sql_debug(debug = True, show_values = True)
 
-        result = recur(LAYOUT);
+        print(list(select(op for op in Config).where(lambda op:op.system.name == "zipi")))
+        result = recur(LAYOUT, None);
+
 
         return Response(json.dumps(result), mimetype="application/json")
 
