@@ -1,3 +1,7 @@
+.plot{
+    height: 750px;
+}
+
 .container-fluid {
     /*Take full page*/
     display:flex;

@@ -48,6 +48,18 @@ const formatTab = function (presetName, param) {
         tabs: vanillaTabs,
         activeTab: 'tags',
       };
+    case 'CommitComparator':
+      // Unfold bench section
+      baseIdx = vanillaTabs.tags.tags.indexOf('bench');
+      vanillaTabs.tags.folded[baseIdx] = false;
+      vanillaTabs.tags.active = baseIdx;
+
+      // Return result
+      return {
+        title: 'Commit Comparison',
+        tabs: vanillaTabs,
+        activeTab: 'tags',
+      };
     case 'VersionComparator':
       // Unfold baseline and sibling
       baseIdx = vanillaTabs.tags.tags.indexOf('baselineMode');

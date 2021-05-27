@@ -24,7 +24,7 @@ const presetError = function (presetName, error) {
  */
 const avgBenchAllVersion = function (pg, presetName) {
   try {
-    pg.setParameter('x', 'gambit-version');
+    pg.setParameter('x', 'zipi-version');
     pg.setParameter('type', 'all systems');
     pg.setParameter('measure', 'real time');
     pg.setParameter('toZero', 'yes');
@@ -65,19 +65,20 @@ const benchAllVersion = function (pg, presetName) {
  * @memberOf preset
  */
 const versionComparator = function (pg, presetName,
-  commit = pg.datasets.get('gambit').getLastOption('gambit-version')) {
-  try {
-    pg.setParameter('x', 'bench');
-    pg.setParameter('type', 'comparator');
-    pg.setParameter('measure', 'real time');
-    pg.setParameter('series', 'gambit-version');
-    pg.setParameter('sortX', 'yes');
-    pg.all();
+  commit = pg.datasets.get('zipi').getLastOption('zipi-version')) {
+  
+    try {
+      pg.setParameter('x', 'benchmarks');
+      pg.setParameter('type', 'comparator');
+      pg.setParameter('measure', 'real time');
+      pg.setParameter('series', 'zipi-version');
+      pg.setParameter('sortX', 'yes');
+      pg.all();
 
-    pg.setParameter('gambit-version', commit);
-  } catch (e) {
-    presetError(presetName, e);
-  }
+      pg.setParameter('zipi-version', commit);
+    } catch (e) {
+      presetError(presetName, e);
+    }
 };
 
 /**
@@ -121,15 +122,42 @@ const tail = function (pg, presetName, commit) {
  * @memberOf preset
  */
 const systemComparator = function (pg, presetName) {
+  commit = pg.datasets.get('zipi').getLastOption('zipi-version')
   try {
-    pg.setParameter('x', 'dataset');
-    pg.setParameter('type', 'ordered bars');
+    pg.setParameter('x', 'benchmarks');
+    pg.setParameter('type', 'comparator');
     pg.setParameter('measure', 'real time');
-    pg.setParameter('series', 'bench');
+    pg.setParameter('series', 'dataset');
     pg.setParameter('sortX', 'yes');
     pg.all();
-    pg.setParameter('dataset', 'all');
-    pg.setParameter('bench', 0);
+
+    pg.setParameter('zipi-version', commit);
+    pg.setParameter('zipi-settings', 'gcc10-py39-gambit-sh')
+    pg.setParameter('cpython-version', '2105082220 v3.10')
+  } catch (e) {
+    presetError(presetName, e);
+  }
+};
+
+/**
+ * Comparison of all systems over all versions and one benchmark
+ * @param {PlotGenerator} pg
+ * @param {string} presetName
+ * @memberOf preset
+ */
+ const commitComparator = function (pg, presetName) {
+  commit = pg.datasets.get('zipi').getLastOption('zipi-version')
+  try {
+    pg.setParameter('x', 'benchmarks');
+    pg.setParameter('type', 'comparator');
+    pg.setParameter('measure', 'real time');
+    pg.setParameter('series', 'zipi-version');
+    pg.setParameter('sortX', 'yes');
+    pg.all();
+
+    pg.setParameter('zipi-version', commit);
+    pg.setParameter('zipi-settings', 'gcc10-py39-gambit-sh')
+    pg.setParameter('cpython-version', '2105082220 v3.10')
   } catch (e) {
     presetError(presetName, e);
   }
@@ -140,6 +168,7 @@ const presetMap = new Map();
 presetMap.set('AvgBenchAllVersion', avgBenchAllVersion);
 presetMap.set('benchAllVersion', benchAllVersion);
 presetMap.set('SystemComparator', systemComparator);
+presetMap.set('CommitComparator', commitComparator);
 presetMap.set('VersionComparator', versionComparator);
 presetMap.set('head', head);
 presetMap.set('tail', tail);

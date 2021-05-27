@@ -7,7 +7,7 @@ class PlotViewer extends PureComponent {
     return (
       <React.Fragment>
         <Plot
-          className="w-100"
+          className="w-100 plot"
           data={figure.data}
           layout={figure.layout}
           onHover={handlePlotHover}

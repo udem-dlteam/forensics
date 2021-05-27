@@ -158,7 +158,7 @@ module.exports.PlotGenerator = class {
             isVariable: true,
             // Stat and Measure allow only one option
             multiOption: isMulti,
-            hasMeta: x === METATAG,
+            hasMeta: x.endsWith("-version"),
             lock: false,
             compaDatasets: [name], // Tag as compatible with this dataset
           };

@@ -416,8 +416,12 @@ module.exports.paraSort = function (sortBy, ...rest) {
   const sortObject = sortBy
     .map((x, i) => [x, ...rest.map(y => y[i])]);
 
+  console.log(sortObject)
   // Sort following sortBy value
-  sortObject.sort((a, b) => a[0] - b[0]);
+
+  sortObject.sort().sort((a, b) => {
+    return a[0] - b[0]
+  });
 
   // Transpose and return
   return module.exports.transpose(sortObject);
