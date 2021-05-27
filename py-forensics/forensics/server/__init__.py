@@ -35,11 +35,11 @@ class APILegacy(MethodView):
             options = []
             meta = []
 
-            commits = sorted(sys.commits, key=lambda x : x.timestamp);
+            commits = sorted(sys.commits, key=lambda x : x.timestamp)
 
             # Commit name
             tags.append(sys.name + "-version")
-            commits_name = list(map(lambda x: x.timestamp.strftime("%m/%d/%-y %H:%M ") + x.name, commits))
+            commits_name = list(map(lambda x: x.timestamp.strftime("%-y%d%m%H%M ") + x.name[:5], commits))
             meta = list(
                 map(
                     lambda x: f"name : {x.name}\ntime : {x.timestamp}\n description : {x.description}\n",
@@ -58,11 +58,7 @@ class APILegacy(MethodView):
             all_benchmarks = select(x for x in Benchmark)
             benchmarks = all_benchmarks
 
-            # for bench in all_benchmarks:
-            #    if sys in map(lambda x : x.build.system, bench.runs):
-            #        benchmarks.append(bench)
-
-            options.append(list(map(lambda x: x.name, benchmarks)))
+            options.append(list(map(lambda x: x.name.split("/")[-1], benchmarks)))
 
             tags.append("measure")
             options.append(measures)
@@ -109,7 +105,7 @@ class APILegacy(MethodView):
                     "tags": tags,
                     "options": options,
                     "data": data,
-                    "meta": meta,
+                    "metas": meta,
                 }
             )
 
@@ -240,7 +236,7 @@ def create_app(config):
     CORS(app)
     app.config["CORS_HEADERS"] = "Content-Type"
 
-    app.add_url_rule('/legacy', view_func=APILegacy.as_view('legacy'), methods=["GET",])
+    app.add_url_rule('/legacy/', view_func=APILegacy.as_view('legacy'), methods=["GET",])
 
     db.bind(provider="sqlite", filename=config["SERVER"]["database"])
     db.generate_mapping(create_tables=False)
