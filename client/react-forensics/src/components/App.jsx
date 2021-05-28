@@ -26,7 +26,7 @@ import {
 // forensics-plot
 import { PlotGenerator } from '../../../forensics-plot/build/forensics-plot';
 
-const DEFAULT_API_URL = "http://localhost:3002"
+const DEFAULT_API_URL = "http://zipi-forensics.gambitscheme.org/"
 const loaderData = new Map();
 
 /*
@@ -172,7 +172,6 @@ class App extends Component {
       this.setFirstMeta(activeTab);
 
     }).catch((e) => {
-      console.log(e)
       this.setState({
         error: "Cannot find a valid api at " + backendUrl + ". Try using another apiurl by specifiying it as an argument in the URL. For exemple : localhost:3000/?apiurl=http://exemple.com:3002",
         loading: false

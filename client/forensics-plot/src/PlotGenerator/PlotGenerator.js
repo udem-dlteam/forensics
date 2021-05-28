@@ -1106,8 +1106,18 @@ module.exports.PlotGenerator = class {
     // Y-scale
     switch (this.getSelectedOptions('yScale')) {
       case 'log':
-        result.layout[targetAxis].type = 'log';
-        result.layout[targetAxis].title.text += ' (log)';
+        
+        
+        console.log(result)
+        if(type == "comparator"){
+          result.layout[targetAxis].title.text += ' (log ratio)';
+          result.data[0].y = result.data[0].y.map(percent => Math.log10(1 + percent/100))
+          result.layout.yaxis.ticksuffix = 'x'
+        }
+        else{
+          result.layout[targetAxis].title.text += ' (log)';
+          result.layout[targetAxis].type = 'log';
+        }
         result.layout.annotations.forEach((e) => {
           // Log scale of annotations. See plotly issue #1258
           e[targetAxis.charAt(0)] = Math.log10(e[targetAxis.charAt(0)]);

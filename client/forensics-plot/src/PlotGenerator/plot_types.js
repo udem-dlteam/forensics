@@ -62,7 +62,7 @@ module.exports.LOCKPOLICY = [
   null,
   { settingNames: ['toZero'], options: ['no'] },
   {
-    settingNames: ['toZero', 'mean', 'norm', 'yScale'],
+    settingNames: ['toZero', 'mean', 'norm'],
     options: ['no', 'yes', 'none', 'auto'],
   },
   {
