@@ -42,7 +42,7 @@ class APILegacy(MethodView):
             commits_name = list(map(lambda x: x.timestamp.strftime("%-y%m%d%H%M ") + x.name[:5], commits))
             meta = list(
                 map(
-                    lambda x: f"name : {x.name}\ntime : {x.timestamp}\n description : {x.description}\n",
+                    lambda x: f"{x.name}\ntime : {x.timestamp}\n description : {x.description}\n",
                     commits,
                 )
             )
