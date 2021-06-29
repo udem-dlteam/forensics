@@ -54,8 +54,9 @@ def batch_insert_all(root):
                     build_id = insert_build_results(build_results)
                 except Exception as e:
                     logger.warning(
-                        f"Could not process build for {system.name}/{commit.name}/{config.name}, skipping"
+                            f"Could not process build for {system.name}/{commit.name}/{config.name}, skipping (Exception: {str(e)})"
                     )
+                    break
 
                 logger.debug(
                     f"Processed build for {system.name}/{commit.name}/{config.name}"
