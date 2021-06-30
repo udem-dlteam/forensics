@@ -26,7 +26,7 @@ import {
 // forensics-plot
 import { PlotGenerator } from '../../../forensics-plot/build/forensics-plot';
 
-const DEFAULT_API_URL = "http://zipi-forensics.gambitscheme.org/"
+const DEFAULT_API_URL = "./api"
 const loaderData = new Map();
 
 /*
