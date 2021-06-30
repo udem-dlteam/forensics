@@ -122,7 +122,6 @@ class App extends Component {
       // Figure is then passed as props to the plot component
       // (see render method).
       //fetchData()
-      console.log(loaderData)
       this.pg = new PlotGenerator(loaderData);
 
       // Get formatSave from localStorage
