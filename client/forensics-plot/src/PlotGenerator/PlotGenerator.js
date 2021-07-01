@@ -1121,7 +1121,7 @@ module.exports.PlotGenerator = class {
           let ticktext = []
           for(let i = Math.floor(max); i > min; i--){
             tickvals.push(i)
-            ticktext.push(Math.pow(10, i) + "")
+            ticktext.push(Math.pow(10, -i) + "")
           }
 
           result.layout.yaxis.tickmode = 'array'

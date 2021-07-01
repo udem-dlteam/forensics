@@ -123,6 +123,21 @@ const tail = function (pg, presetName, commit) {
  */
 const systemComparator = function (pg, presetName) {
   commit = pg.datasets.get('zipi').getLastOption('zipi-version')
+
+  let commit_cpython = pg.datasets.get('cpython').cat[0].filter(x => !x.startsWith("XX "))
+  console.log(pg)
+  console.log(commit_cpython)
+  if (commit_cpython.includes("2105082220 v3.10")){
+    commit_cpython = "2105082220 v3.10"
+  }
+  else{
+    commit_cpython = commit_cpython[0]
+  }
+
+  console.log(commit_cpython)
+  zipi_commit = pg.datasets.get('zipi').cat[0].filter(x => !x.startsWith("XX "))[0]
+  zipi_setting = pg.datasets.get('zipi').getLastOption('zipi-settings')
+
   try {
     pg.setParameter('x', 'benchmarks');
     pg.setParameter('type', 'comparator');
@@ -132,8 +147,8 @@ const systemComparator = function (pg, presetName) {
     pg.all();
 
     pg.setParameter('zipi-version', commit);
-    pg.setParameter('zipi-settings', 'gcc10-py39-gambit-sh')
-    pg.setParameter('cpython-version', '2105082220 v3.10')
+    pg.setParameter('zipi-settings', zipi_setting)
+    pg.setParameter('cpython-version', commit_cpython)
   } catch (e) {
     presetError(presetName, e);
   }
@@ -146,7 +161,15 @@ const systemComparator = function (pg, presetName) {
  * @memberOf preset
  */
  const commitComparator = function (pg, presetName) {
-  commit = pg.datasets.get('zipi').getLastOption('zipi-version')
+  let commit_cpython = pg.datasets.get('cpython').cat[0].filter(x => !x.startsWith("XX -"))
+  if (commit_cpython.includes("2105082220 v3.10")){
+    commit_cpython = "2105082220 v3.10"
+  }
+  else{
+    commit_cpython = commit_cpython[0]
+  }
+  zipi_commit = pg.datasets.get('zipi').cat[0].filter(x => !x.startsWith("XX -"))[0]
+  zipi_setting = pg.datasets.get('zipi').getLastOption('zipi-settings')
   try {
     pg.setParameter('x', 'benchmarks');
     pg.setParameter('type', 'comparator');
@@ -156,8 +179,8 @@ const systemComparator = function (pg, presetName) {
     pg.all();
 
     pg.setParameter('zipi-version', commit);
-    pg.setParameter('zipi-settings', 'gcc10-py39-gambit-sh')
-    pg.setParameter('cpython-version', '2105082220 v3.10')
+    pg.setParameter('zipi-settings', zipi_setting)
+    pg.setParameter('cpython-version', commit_cpython)
   } catch (e) {
     presetError(presetName, e);
   }

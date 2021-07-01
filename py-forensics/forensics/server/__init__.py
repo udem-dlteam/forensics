@@ -66,10 +66,12 @@ class APILegacy(MethodView):
             tags.append("stat")
             options.append(["mean", "sd"])
 
+            
 
             data = []
-            for commit in commits:
+            for commit_id, commit in enumerate(commits):
                 commit_data = []
+                all_zero = True
                 for config in sys.configs:
                     config_data = []
                     for bench in benchmarks:
@@ -91,11 +93,19 @@ class APILegacy(MethodView):
                             # check if all values are numbers
                             if all(map(str_is_float, split_res)):
                                 to_append = split_res[0]
+                        
+                        if to_append != "0":
+                            all_zero = False
 
                         bench_data.append([to_append])
 
                         config_data.append(bench_data)
+
                     commit_data.append(config_data)
+                if all_zero:
+                    # options[0] is the commit section 
+                    options[0][commit_id] = "XX " + options[0][commit_id]
+                    
                 data.append(commit_data)
 
             return_value.append(
