@@ -416,9 +416,7 @@ module.exports.paraSort = function (sortBy, ...rest) {
   const sortObject = sortBy
     .map((x, i) => [x, ...rest.map(y => y[i])]);
 
-  console.log(sortObject)
-  // Sort following sortBy value
-
+  // Sort following sortBy value. Sort a first time to but the NaN at the end
   sortObject.sort().sort((a, b) => {
     return a[0] - b[0]
   });

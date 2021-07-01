@@ -26,7 +26,7 @@ import {
 // forensics-plot
 import { PlotGenerator } from '../../../forensics-plot/build/forensics-plot';
 
-const DEFAULT_API_URL = "http://zipi-forensics.gambitscheme.org/"
+const DEFAULT_API_URL = "./api"
 const loaderData = new Map();
 
 /*
@@ -122,7 +122,6 @@ class App extends Component {
       // Figure is then passed as props to the plot component
       // (see render method).
       //fetchData()
-      console.log(loaderData)
       this.pg = new PlotGenerator(loaderData);
 
       // Get formatSave from localStorage

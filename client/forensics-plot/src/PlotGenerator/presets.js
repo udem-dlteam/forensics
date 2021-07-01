@@ -133,7 +133,7 @@ const systemComparator = function (pg, presetName) {
 
     pg.setParameter('zipi-version', commit);
     pg.setParameter('zipi-settings', 'gcc10-py39-gambit-sh')
-    pg.setParameter('cpython-version', '2108052220 v3.10')
+    pg.setParameter('cpython-version', '2105082220 v3.10')
   } catch (e) {
     presetError(presetName, e);
   }
@@ -157,7 +157,7 @@ const systemComparator = function (pg, presetName) {
 
     pg.setParameter('zipi-version', commit);
     pg.setParameter('zipi-settings', 'gcc10-py39-gambit-sh')
-    pg.setParameter('cpython-version', '2108052220 v3.10')
+    pg.setParameter('cpython-version', '2105082220 v3.10')
   } catch (e) {
     presetError(presetName, e);
   }

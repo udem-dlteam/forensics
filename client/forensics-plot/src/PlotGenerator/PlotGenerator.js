@@ -1003,8 +1003,8 @@ module.exports.PlotGenerator = class {
 
       // To Relative. Wrap in array for plotly (to get a matrix). Multiply
       // by 100 because comparator family axes are on a percentage basis
-      mean = [mean.map((x, i) => 100 * x / meanBase[i])];
-      sd = [sd.map((x, i) => 100 * (x / meanBase[i]))];
+      mean = [mean.map((x, i) => meanBase[i] == 0 ? 0 : 100 * x / meanBase[i])];
+      sd = [sd.map((x, i) => meanBase[i] == 0 ? 0 : 100 * (x / meanBase[i]))];
     }
 
     // Define color palette
@@ -1106,18 +1106,33 @@ module.exports.PlotGenerator = class {
     // Y-scale
     switch (this.getSelectedOptions('yScale')) {
       case 'log':
-        
-        
-        console.log(result)
+
         if(type == "comparator"){
           result.layout[targetAxis].title.text += ' (log ratio)';
-          result.data[0].y = result.data[0].y.map(percent => Math.log10(1 + percent/100))
-          result.layout.yaxis.ticksuffix = 'x'
+          let data = result.data[0].y.map(percent => Math.log10(1 + percent/100))
+          result.data[0].y = data
+          result.layout.yaxis.ticksuffix = ''
+
+          let min = mathUtil.minimum(data)
+          let max = mathUtil.maximum(data)
+
+
+          let tickvals = []
+          let ticktext = []
+          for(let i = Math.floor(max); i > min; i--){
+            tickvals.push(i)
+            ticktext.push(Math.pow(10, i) + "")
+          }
+
+          result.layout.yaxis.tickmode = 'array'
+          result.layout.yaxis.tickvals = tickvals
+          result.layout.yaxis.ticktext = ticktext
         }
         else{
           result.layout[targetAxis].title.text += ' (log)';
-          result.layout[targetAxis].type = 'log';
+          
         }
+        result.layout[targetAxis].type = 'symlog';
         result.layout.annotations.forEach((e) => {
           // Log scale of annotations. See plotly issue #1258
           e[targetAxis.charAt(0)] = Math.log10(e[targetAxis.charAt(0)]);
@@ -1168,7 +1183,6 @@ module.exports.PlotGenerator = class {
 
     // Package metas with figure for easy access for top level apps
     result.metas = metas;
-
     return result;
   }
 };
