@@ -149,6 +149,7 @@ const systemComparator = function (pg, presetName) {
     pg.setParameter('zipi-version', commit);
     pg.setParameter('zipi-settings', zipi_setting)
     pg.setParameter('cpython-version', commit_cpython)
+    pg.setParameter('yScale', 'log')
   } catch (e) {
     presetError(presetName, e);
   }
@@ -162,6 +163,7 @@ const systemComparator = function (pg, presetName) {
  */
  const commitComparator = function (pg, presetName) {
   let commit_cpython = pg.datasets.get('cpython').cat[0].filter(x => !x.startsWith("XX -"))
+  console.log(pg)
   if (commit_cpython.includes("2105082220 v3.10")){
     commit_cpython = "2105082220 v3.10"
   }
@@ -181,6 +183,8 @@ const systemComparator = function (pg, presetName) {
     pg.setParameter('zipi-version', commit);
     pg.setParameter('zipi-settings', zipi_setting)
     pg.setParameter('cpython-version', commit_cpython)
+    pg.setParameter('yScale', 'log')
+
   } catch (e) {
     presetError(presetName, e);
   }
