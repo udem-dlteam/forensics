@@ -171,10 +171,18 @@ class App extends Component {
       this.setFirstMeta(activeTab);
 
     }).catch((e) => {
-      this.setState({
-        error: "Cannot find a valid api at " + backendUrl + ". Try using another apiurl by specifiying it as an argument in the URL. For exemple : localhost:3000/?apiurl=http://exemple.com:3002",
-        loading: false
-      })
+      
+      if(localStorage.length !== 0){
+        localStorage.clear()
+        window.location.reload()
+      }
+      else{
+        this.setState({
+          error: "Cannot find a valid api at " + backendUrl + ". Try using another apiurl by specifiying it as an argument in the URL. For exemple : localhost:3000/?apiurl=http://exemple.com:3002",
+          loading: false
+        })
+      }
+
     })
     
 
@@ -500,6 +508,7 @@ class App extends Component {
   }
 
   selectOne(name, id) {
+
     // Assign object to change reference and trigger plot render
     const { param } = this.state;
     const target = param[name];
@@ -567,10 +576,8 @@ class App extends Component {
     param = this.pg.getParameters();
 
     const figure = this.pg.getFigure();
-
     // Handle baseline position
     this.repositionBaseline(param.series.options[param.series.active]);
-
     this.setState({ param, figure });
   }
 

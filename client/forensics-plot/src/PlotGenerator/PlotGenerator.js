@@ -960,7 +960,6 @@ module.exports.PlotGenerator = class {
   getFigure(thumbnail = false) {
     // Get plot type
     const type = this.getSelectedOptions('type');
-
     // Get axis info
     const xName = this.getSelectedOptions('x');
     const measure = this.getSelectedOptions('measure');
@@ -991,47 +990,57 @@ module.exports.PlotGenerator = class {
         true,
       );
 
+    
       // Coerce into average to ensure 1D
       sd = mathUtil.mxAverageSD(sd, 0);
       sdBase = mathUtil.mxAverageSD(sdBase, 0);
       mean = mathUtil.mxMean(mean, 0);
       meanBase = mathUtil.mxMean(meanBase, 0);
 
+    
       // Get diff
       mean = mathUtil.meanDiff(mean, meanBase);
       sd = mathUtil.sdDiff(sd, sdBase);
 
+    
       // To Relative. Wrap in array for plotly (to get a matrix). Multiply
       // by 100 because comparator family axes are on a percentage basis
       mean = [mean.map((x, i) => meanBase[i] == 0 ? 0 : 100 * x / meanBase[i])];
       sd = [sd.map((x, i) => meanBase[i] == 0 ? 0 : 100 * (x / meanBase[i]))];
     }
 
+    
     // Define color palette
     let colors;
     let colorX = false;
 
+    
     if (seriesLabels.length === 1
       && ['bar chart', 'ordered bars'].includes(type)) {
       // Allow x coloring (bars of different color) when only one series is
       // present
       colorX = true;
       colors = xLabels.map((x, i) => PALETTE[i % PALETTE.length]);
+    
     } else if (this.isComparatorFamily(type)) {
       // Quantitative coloring for some plot types
       colorX = true;
       colors = mean[0].map(x => colorSwitch(x));
+    
     } else {
       // Standard coloring by traces
       colors = seriesLabels.map((x, i) => PALETTE[i % PALETTE.length]);
+    
     }
 
     // Normalization
     const normOption = this.getSelectedOptions('norm');
+    
 
     if (normOption !== 'none') {
       // To relative sd
       sd = sd.map((line, i) => line.map((e, j) => e / mean[i][j]));
+    
 
       switch (normOption) {
         case 'minimum':
@@ -1050,19 +1059,24 @@ module.exports.PlotGenerator = class {
       // To absolute
       sd = sd.map((line, i) => line.map((e, j) => e * mean[i][j]));
     }
+    
 
     // Retrieve metas
     let metas;
+    
     const xContext = this.getIndexes(xName);
+    
     if (this.param[xName].hasMeta) {
       metas = xContext.map(x => this.param[xName].metas[x]);
     } else {
       metas = new Array(xContext.length).fill(null);
     }
+    
 
     // Sort x axis
     if (sort === 'yes') {
       let data;
+    
 
       // Sort based on mean performance of each x categories. Only include
       // colors if plot colors are bound to x axis
@@ -1074,15 +1088,19 @@ module.exports.PlotGenerator = class {
           .paraSort(mathUtil.mxMean(mean, 0), xLabels, metas, ...mean, ...sd);
       }
       mean = data.slice(0, mean.length); // Retrieved sorted series
+    
       sd = data.slice(mean.length); // Retrieved sorted errors
     }
 
+    
     // Compute average
     if (this.getSelectedOptions('mean') === 'yes') {
+    
       sd = [mathUtil.mxAverageSD(sd, 0)];
       mean = [mathUtil.mxMean(mean, 0)];
       seriesLabels = [`Average ${formatter.stringFormat(seriesName)} Performance by ${formatter.stringFormat(xName)}`];
     }
+    
 
     // Get title
     const title = thumbnail ? null : this.formatTitle(
@@ -1090,22 +1108,27 @@ module.exports.PlotGenerator = class {
       seriesLabels, seriesName, xName, normOption, type, thumbnail,
     );
 
+    
     // Get figure
     const result = plotTypes.plotTypeRouter(type, title, xName, xLabels,
       measure, seriesName, mean, seriesLabels, TOLERANCE, this, sd, colors);
+    
 
 
     // Figure post-processing
     const targetAxis = type === 'ordered bars' ? 'xaxis' : 'yaxis';
+    
 
     // To Zero option
     if (this.getSelectedOptions('toZero') === 'yes') {
       result.layout[targetAxis].rangemode = 'tozero';
     }
 
+    
     // Y-scale
     switch (this.getSelectedOptions('yScale')) {
       case 'log':
+    
 
         if(type == "comparator"){
           result.layout[targetAxis].title.text += ' (log ratio)';
@@ -1113,13 +1136,12 @@ module.exports.PlotGenerator = class {
           result.data[0].y = data
           result.layout.yaxis.ticksuffix = ''
 
-          let min = mathUtil.minimum(data)
+          let min = Math.max(mathUtil.minimum(data), 0)
           let max = mathUtil.maximum(data)
-
 
           let tickvals = []
           let ticktext = []
-          for(let i = Math.floor(max); i > min; i--){
+          for(let i = Math.ceil(max); i > min; i--){
             tickvals.push(i)
             ticktext.push(Math.pow(10, -i) + "")
           }
@@ -1147,6 +1169,7 @@ module.exports.PlotGenerator = class {
         break;
     }
 
+    
     // Thumbnail processing
     if (thumbnail) {
       if (type === 'head' || type === 'tail') {
@@ -1180,6 +1203,7 @@ module.exports.PlotGenerator = class {
         };
       }
     }
+    
 
     // Package metas with figure for easy access for top level apps
     result.metas = metas;
