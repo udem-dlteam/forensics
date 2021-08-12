@@ -125,8 +125,6 @@ const systemComparator = function (pg, presetName) {
   commit = pg.datasets.get('zipi').getLastOption('zipi-version')
 
   let commit_cpython = pg.datasets.get('cpython').cat[0].filter(x => !x.startsWith("XX "))
-  console.log(pg)
-  console.log(commit_cpython)
   if (commit_cpython.includes("2105082220 v3.10")){
     commit_cpython = "2105082220 v3.10"
   }
@@ -134,7 +132,6 @@ const systemComparator = function (pg, presetName) {
     commit_cpython = commit_cpython[0]
   }
 
-  console.log(commit_cpython)
   zipi_commit = pg.datasets.get('zipi').cat[0].filter(x => !x.startsWith("XX "))[0]
   zipi_setting = pg.datasets.get('zipi').getLastOption('zipi-settings')
 
@@ -146,7 +143,7 @@ const systemComparator = function (pg, presetName) {
     pg.setParameter('sortX', 'yes');
     pg.all();
 
-    pg.setParameter('zipi-version', commit);
+    pg.setParameter('zipi-version', zipi_commit);
     pg.setParameter('zipi-settings', zipi_setting)
     pg.setParameter('cpython-version', commit_cpython)
     pg.setParameter('yScale', 'log')
@@ -190,6 +187,33 @@ const systemComparator = function (pg, presetName) {
   }
 };
 
+/**
+ * Comparison of all systems over all versions and one benchmark
+ * @param {PlotGenerator} pg
+ * @param {string} presetName
+ * @memberOf preset
+ */
+ const biglooGambitComparator = function (pg, presetName) {
+  zipi_commit = pg.datasets.get('zipi').cat[0].filter(x => !x.startsWith("XX -"))[0]
+  zipi_setting = pg.datasets.get('zipi').getLastOption('zipi-settings')
+  try {
+    pg.setParameter('x', 'benchmarks');
+    pg.setParameter('type', 'comparator');
+    pg.setParameter('measure', 'real time');
+    pg.setParameter('series', 'zipi-settings');
+    pg.setParameter('sortX', 'yes');
+    pg.all();
+
+    pg.setParameter('zipi-version', commit);
+    pg.setParameter('zipi-settings', zipi_setting)
+    pg.setParameter('yScale', 'log')
+
+  } catch (e) {
+    presetError(presetName, e);
+  }
+};
+
+
 // Bind presetName to function
 const presetMap = new Map();
 presetMap.set('AvgBenchAllVersion', avgBenchAllVersion);
@@ -197,6 +221,7 @@ presetMap.set('benchAllVersion', benchAllVersion);
 presetMap.set('SystemComparator', systemComparator);
 presetMap.set('CommitComparator', commitComparator);
 presetMap.set('VersionComparator', versionComparator);
+presetMap.set('biglooGambitComparator', biglooGambitComparator);
 presetMap.set('head', head);
 presetMap.set('tail', tail);
 
