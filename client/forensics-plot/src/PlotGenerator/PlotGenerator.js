@@ -997,7 +997,9 @@ module.exports.PlotGenerator = class {
       mean = mathUtil.mxMean(mean, 0);
       meanBase = mathUtil.mxMean(meanBase, 0);
 
-    
+      //fix to remove 0 values that doesnt make any sense
+      mean = mean.map(x => x === 0? NaN : x)
+
       // Get diff
       mean = mathUtil.meanDiff(mean, meanBase);
       sd = mathUtil.sdDiff(sd, sdBase);

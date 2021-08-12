@@ -562,6 +562,7 @@ const comparator = function (title, xName, xSerie,
   const horiz = performanceBars(title, xName, xSerie, yName,
     ySeries, traces, errors, colors, labelsCopy, horizontal);
 
+
   const target = horizontal ? 'xaxis' : 'yaxis';
 
   horiz.layout[target].ticksuffix = '%';
