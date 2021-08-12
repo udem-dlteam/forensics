@@ -1138,7 +1138,11 @@ module.exports.PlotGenerator = class {
           result.data[0].y = data
           result.layout.yaxis.ticksuffix = ''
 
-          let min = Math.max(mathUtil.minimum(data), 0)
+          if(data.some(x => x === -Infinity || x === Infinity)){
+            alert("WARNING -- infnite value detected... talk to Léonard")
+            data.map(x => (x === -Infinity || x === Infinity )? 0 : x )
+          }
+          let min = mathUtil.minimum(data)
           let max = mathUtil.maximum(data)
 
           let tickvals = []
