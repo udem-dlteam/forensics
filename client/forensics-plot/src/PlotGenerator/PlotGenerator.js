@@ -1134,22 +1134,37 @@ module.exports.PlotGenerator = class {
 
         if(type == "comparator"){
           result.layout[targetAxis].title.text += ' (log ratio)';
-          let data = result.data[0].y.map(percent => Math.log10(1 + percent/100))
-          result.data[0].y = data
-          result.layout.yaxis.ticksuffix = ''
+          let percentToRatio = percent => 1 /(1 + percent/100)
 
-          if(data.some(x => x === -Infinity || x === Infinity)){
+          let ratioData = result.data[0].y.map(percentToRatio)
+          result.layout.yaxis.ticksuffix = ''
+          result.data[0].y = ratioData.map(x => Math.log10(x))
+
+          if(ratioData.some(x => x === -Infinity || x === Infinity)){
             alert("WARNING -- infnite value detected... talk to Léonard")
-            data.map(x => (x === -Infinity || x === Infinity )? 0 : x )
+            ratioData.map(x => (x === -Infinity || x === Infinity )? 0 : x )
           }
-          let min = mathUtil.minimum(data)
-          let max = mathUtil.maximum(data)
+          let max = mathUtil.maximum(ratioData)
+          let maxP = Math.ceil(Math.log10(max))
+          let min = mathUtil.minimum(ratioData)
+          let minP = Math.floor(Math.log10(min))
 
           let tickvals = []
           let ticktext = []
-          for(let i = Math.ceil(max); i > min; i--){
+
+          console.log(min, minP, max, maxP)
+          console.log(ratioData)
+
+          for(let i = minP; i <= maxP; i++){
+            let l = Math.pow(10, i)
             tickvals.push(i)
-            ticktext.push(Math.pow(10, -i) + "")
+            ticktext.push(l + "")
+
+            for(let j of [1, 2, 5]){
+              let k = Math.round((l * j) * 100000) / 100000 
+              tickvals.push(Math.log10(k))
+              ticktext.push(k + "")
+            }
           }
 
           result.layout.yaxis.tickmode = 'array'

@@ -143,7 +143,7 @@ const systemComparator = function (pg, presetName) {
     pg.setParameter('sortX', 'yes');
     pg.all();
 
-    pg.setParameter('zipi-version', zipi_commit);
+    pg.setParameter('zipi-version', commit);
     pg.setParameter('zipi-settings', zipi_setting)
     pg.setParameter('cpython-version', commit_cpython)
     pg.setParameter('yScale', 'log')
@@ -221,7 +221,7 @@ presetMap.set('benchAllVersion', benchAllVersion);
 presetMap.set('SystemComparator', systemComparator);
 presetMap.set('CommitComparator', commitComparator);
 presetMap.set('VersionComparator', versionComparator);
-presetMap.set('biglooGambitComparator', biglooGambitComparator);
+presetMap.set('BiglooGambitComparator', biglooGambitComparator);
 presetMap.set('head', head);
 presetMap.set('tail', tail);
 
