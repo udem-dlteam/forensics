@@ -60,6 +60,19 @@ const formatTab = function (presetName, param) {
         tabs: vanillaTabs,
         activeTab: 'tags',
       };
+    case 'BiglooGambitComparator':
+      // Unfold bench section
+      baseIdx = vanillaTabs.tags.tags.indexOf('bench');
+      vanillaTabs.tags.folded[baseIdx] = false;
+      vanillaTabs.tags.active = baseIdx;
+
+      // Return result
+      return {
+        title: 'Bigloo VS Gambit',
+        tabs: vanillaTabs,
+        activeTab: 'tags',
+      };
+      
     case 'VersionComparator':
       // Unfold baseline and sibling
       baseIdx = vanillaTabs.tags.tags.indexOf('baselineMode');
