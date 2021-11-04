@@ -121,7 +121,7 @@ const savePresets = function (mainApp, commit) {
       console.log(e);
     }
   });
-  mainApp.pg.setDefault();
+  //mainApp.pg.setDefault();
   return savedPresets;
 };
 

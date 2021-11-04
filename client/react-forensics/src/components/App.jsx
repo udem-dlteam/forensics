@@ -29,26 +29,6 @@ import { PlotGenerator } from '../../../forensics-plot/build/forensics-plot';
 const DEFAULT_API_URL = "./api"
 const loaderData = new Map();
 
-/*
-const fetchData = (api_url) => {
-  return fetch(api_url + "/systems", {
-    mode: 'cors',
-    method: 'GET'
-  }).then(x => x.json()).then((systems)=> {
-    let promises = []
-    for(name of systems.names){
-      let url = api_url + "/systems/" + name;
-
-      promises.push(fetch(url, {
-        mode: 'cors',
-        method: 'GET'
-      }).then(x => x.json()).then(data => loaderData.set(data.name, data)))
-    }
-
-    return Promise.all(promises)
-  })
-}
-*/
 
 const fetchData = (api_url) => {
   return fetch(api_url + "/legacy/", {

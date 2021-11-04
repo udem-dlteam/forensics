@@ -12,8 +12,7 @@
  */
 
 const presetError = function (presetName, error) {
-  console.log(`Could not set config ${presetName} because of following error:`);
-  throw error;
+  console.warn(`WARNING : Could not set config ${presetName} because of following error:`);
 };
 
 /**
@@ -23,17 +22,13 @@ const presetError = function (presetName, error) {
  * @memberOf preset
  */
 const avgBenchAllVersion = function (pg, presetName) {
-  try {
-    pg.setParameter('x', 'zipi-version');
-    pg.setParameter('type', 'all systems');
-    pg.setParameter('measure', 'real time');
-    pg.setParameter('toZero', 'yes');
-    pg.setParameter('dataset', 'all');
-    pg.all();
-    pg.setParameter('setting', 0);
-  } catch (e) {
-    presetError(presetName, e);
-  }
+  pg.setParameter('x', 'zipi-version');
+  pg.setParameter('type', 'all systems');
+  pg.setParameter('measure', 'real time');
+  pg.setParameter('toZero', 'yes');
+  pg.setParameter('dataset', 'all');
+  pg.all();
+  pg.setParameter('setting', 0);
 };
 
 /**
@@ -43,18 +38,14 @@ const avgBenchAllVersion = function (pg, presetName) {
  * @memberOf preset
  */
 const benchAllVersion = function (pg, presetName) {
-  try {
-    pg.setParameter('x', 'gambit-version');
-    pg.setParameter('type', 'all systems');
-    pg.setParameter('measure', 'real time');
-    pg.setParameter('toZero', 'yes');
-    pg.setParameter('dataset', 'all');
-    pg.all();
-    pg.setParameter('bench', 0);
-    pg.setParameter('setting', 0);
-  } catch (e) {
-    presetError(presetName, e);
-  }
+  pg.setParameter('x', 'gambit-version');
+  pg.setParameter('type', 'all systems');
+  pg.setParameter('measure', 'real time');
+  pg.setParameter('toZero', 'yes');
+  pg.setParameter('dataset', 'all');
+  pg.all();
+  pg.setParameter('bench', 0);
+  pg.setParameter('setting', 0);
 };
 
 /**
@@ -67,18 +58,14 @@ const benchAllVersion = function (pg, presetName) {
 const versionComparator = function (pg, presetName,
   commit = pg.datasets.get('zipi').getLastOption('zipi-version')) {
   
-    try {
-      pg.setParameter('x', 'benchmarks');
-      pg.setParameter('type', 'comparator');
-      pg.setParameter('measure', 'real time');
-      pg.setParameter('series', 'zipi-version');
-      pg.setParameter('sortX', 'yes');
-      pg.all();
+  pg.setParameter('x', 'benchmarks');
+  pg.setParameter('type', 'comparator');
+  pg.setParameter('measure', 'real time');
+  pg.setParameter('series', 'zipi-version');
+  pg.setParameter('sortX', 'yes');
+  pg.all();
 
-      pg.setParameter('zipi-version', commit);
-    } catch (e) {
-      presetError(presetName, e);
-    }
+  pg.setParameter('zipi-version', commit);
 };
 
 /**
@@ -90,12 +77,8 @@ const versionComparator = function (pg, presetName,
  * @memberOf preset
  */
 const head = function (pg, presetName, commit) {
-  try {
-    versionComparator(pg, presetName, commit);
-    pg.setParameter('type', 'head');
-  } catch (e) {
-    presetError(presetName, e);
-  }
+  versionComparator(pg, presetName, commit);
+  pg.setParameter('type', 'head');
 };
 
 /**
@@ -107,12 +90,8 @@ const head = function (pg, presetName, commit) {
  * @memberOf preset
  */
 const tail = function (pg, presetName, commit) {
-  try {
-    versionComparator(pg, presetName, commit);
-    pg.setParameter('type', 'tail');
-  } catch (e) {
-    presetError(presetName, e);
-  }
+  versionComparator(pg, presetName, commit);
+  pg.setParameter('type', 'tail');
 };
 
 /**
@@ -122,6 +101,7 @@ const tail = function (pg, presetName, commit) {
  * @memberOf preset
  */
 const systemComparator = function (pg, presetName) {
+  
   commit = pg.datasets.get('zipi').getLastOption('zipi-version')
 
   let commit_cpython = pg.datasets.get('cpython').cat[0].filter(x => !x.startsWith("XX "))
@@ -135,21 +115,17 @@ const systemComparator = function (pg, presetName) {
   zipi_commit = pg.datasets.get('zipi').cat[0].filter(x => !x.startsWith("XX "))[0]
   zipi_setting = pg.datasets.get('zipi').getLastOption('zipi-settings')
 
-  try {
-    pg.setParameter('x', 'benchmarks');
-    pg.setParameter('type', 'comparator');
-    pg.setParameter('measure', 'real time');
-    pg.setParameter('series', 'dataset');
-    pg.setParameter('sortX', 'yes');
-    pg.all();
+  pg.setParameter('x', 'benchmarks');
+  pg.setParameter('type', 'comparator');
+  pg.setParameter('measure', 'real time');
+  pg.setParameter('series', 'dataset');
+  pg.setParameter('sortX', 'yes');
+  pg.all();
 
-    pg.setParameter('zipi-version', commit);
-    pg.setParameter('zipi-settings', zipi_setting)
-    pg.setParameter('cpython-version', commit_cpython)
-    pg.setParameter('yScale', 'log')
-  } catch (e) {
-    presetError(presetName, e);
-  }
+  pg.setParameter('zipi-version', commit);
+  pg.setParameter('zipi-settings', zipi_setting)
+  pg.setParameter('cpython-version', commit_cpython)
+  pg.setParameter('yScale', 'log')
 };
 
 /**
@@ -169,22 +145,18 @@ const systemComparator = function (pg, presetName) {
   }
   zipi_commit = pg.datasets.get('zipi').cat[0].filter(x => !x.startsWith("XX -"))[0]
   zipi_setting = pg.datasets.get('zipi').getLastOption('zipi-settings')
-  try {
-    pg.setParameter('x', 'benchmarks');
-    pg.setParameter('type', 'comparator');
-    pg.setParameter('measure', 'real time');
-    pg.setParameter('series', 'zipi-version');
-    pg.setParameter('sortX', 'yes');
-    pg.all();
+  pg.setParameter('x', 'benchmarks');
+  pg.setParameter('type', 'comparator');
+  pg.setParameter('measure', 'real time');
+  pg.setParameter('series', 'zipi-version');
+  pg.setParameter('sortX', 'yes');
+  pg.all();
 
-    pg.setParameter('zipi-version', commit);
-    pg.setParameter('zipi-settings', zipi_setting)
-    pg.setParameter('cpython-version', commit_cpython)
-    pg.setParameter('yScale', 'log')
+  pg.setParameter('zipi-version', commit);
+  pg.setParameter('zipi-settings', zipi_setting)
+  pg.setParameter('cpython-version', commit_cpython)
+  pg.setParameter('yScale', 'log')
 
-  } catch (e) {
-    presetError(presetName, e);
-  }
 };
 
 /**
@@ -244,8 +216,12 @@ module.exports.presetRouter = function (pg, presetName, commit) {
   if (func === undefined) {
     throw new Error('Please enter a valid preset name for PlotGenerator.');
   }
-
-  func(pg, presetName, commit);
+  try{
+    func(pg, presetName, commit);
+  }
+  catch(e){
+    presetError(presetName, e);
+  }
 };
 
 /**

@@ -58,7 +58,7 @@ class APILegacy(MethodView):
             all_benchmarks = select(x for x in Benchmark)
             benchmarks = all_benchmarks
 
-            options.append(list(map(lambda x: x.name.split("/")[-1], benchmarks)))
+            options.append(list(map(lambda x: "/".join(reversed(x.name.split("/"))), benchmarks)))
 
             tags.append("measure")
             options.append(measures)
