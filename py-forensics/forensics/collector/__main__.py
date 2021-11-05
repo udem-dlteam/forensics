@@ -9,9 +9,9 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument("-c", "--conf", nargs=1, help="path to a benchd.conf file")
 parser.add_argument("-i", "--init", action="store_true", help="initialize the database")
-parser.add_argument("-b", "--batch", nargs=1, help="path to system directory")
+parser.add_argument("-b", "--batch", nargs='*', help="path to system directory")
 parser.add_argument(
-    "-ba", "--batch-all", nargs=1, help="path to gambit-forensics root directory"
+    "-ba", "--batch-all", nargs='*', help="path to gambit-forensics build directory"
 )
 parser.add_argument("-v", "--verbose", action="store_true", help="log to stdout")
 
@@ -22,19 +22,8 @@ config.read(args.conf)
 
 logger = init_logger(config, args.verbose)
 
-
-def batch_insert(system):
-    """Batch insert of results for one system by recursively traversing the filesystem."""
-    # TODO: refactor batch_insert_all for code reuse.
-    print(f"batch_insert {system}")
-
-
-def batch_insert_all(root):
-    """Batch insert of results for all systems by recursively traversing the filesystem."""
-
-    logger.info(f"Proceding with batch_insert_all in {root}")
-
-    systems = ls_dir(root)
+def batch_insert_dirs(systems):
+    """Batch insert of results from a set of systems by recursively traversing the filesystem."""
 
     for system in systems:
         commits = ls_dir(system)
@@ -96,8 +85,25 @@ def batch_insert_all(root):
                         f"Processed run for {system.name}/{commit.name}/{config.name}/{usage.name}"
                     )
 
-    logger.info(f"Completed batch_insert_all in {root}")
+def batch_insert(system_dirs):
+    """Batch insert of results from a set of systems by recursively traversing the filesystem."""
 
+    logger.info(f"Proceeding with batch_insert in {' , '.join(system_dirs)}")
+
+    systems = []
+    for system_dir in system_dirs:
+        systems += [d for d in os.scandir(os.path.dirname(system_dir) or '.') if d.name == os.path.basename(system_dir)]
+
+    batch_insert_dirs(systems)
+
+def batch_insert_all(build_dirs):
+    """Batch insert of results for all systems by recursively traversing the filesystem."""
+
+    logger.info(f"Proceeding with batch_insert_all in {' , '.join(build_dirs)}")
+
+    for build_dir in build_dirs:
+        systems = ls_dir(build_dir)
+        batch_insert_dirs(systems)
 
 @db_session
 def insert_build_results(path):
@@ -231,14 +237,14 @@ db.generate_mapping(create_tables=False)
 # TODO
 # --batch system
 if args.batch:
-    print(f"Initiating batch_insert in {args.batch[0]}...")
-    batch_insert(args.batch[0])
-    print(f"Completed batch_insert in {args.batch[0]}.")
+    print(f"Initiating batch_insert in {' , '.join(args.batch)}...")
+    batch_insert(args.batch)
+    print(f"Completed batch_insert in {' , '.join(args.batch)}.")
     exit()
 
 # --batch-all
 if args.batch_all:
-    print(f"Initiating batch_insert_all in {args.batch_all[0]}...")
-    batch_insert_all(args.batch_all[0])
-    print(f"Completed batch_insert_all in {args.batch_all[0]}.")
+    print(f"Initiating batch_insert_all in {' , '.join(args.batch_all)}...")
+    batch_insert_all(args.batch_all)
+    print(f"Completed batch_insert_all in {' , '.join(args.batch_all)}.")
     exit()
