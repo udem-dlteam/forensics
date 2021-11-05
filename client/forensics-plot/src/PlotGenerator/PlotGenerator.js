@@ -14,6 +14,7 @@ const presets = require('./presets.js');
 const mathUtil = require('../utilities/math_utilities.js');
 const formatter = require('./string_format');
 const settings = require('./plot_setting.js');
+const compact_paths = require('./compact_paths').compact_paths
 
 /**
  * @typedef {Object} Param - Object with Objects describing variables and plot
@@ -211,6 +212,11 @@ module.exports.PlotGenerator = class {
     // Set default x and series
     this.param.x.options = this.variables;
     this.param.series.options = this.variables;
+
+    // Concatenate name from benchmarks 
+    if(this.param.benchmarks !== undefined){
+      this.param.benchmarks.options = compact_paths(this.param.benchmarks.options)
+    }
 
     // Set default
     this.setDefault();
