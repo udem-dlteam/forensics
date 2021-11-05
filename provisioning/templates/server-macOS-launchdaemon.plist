@@ -3,16 +3,17 @@
 <plist version="1.0">
   <dict>
     <key>Label</key>
-    <string>forensics-http</string>
+    <string>zipi-forensics-http</string>
     <key>ProgramArguments</key>
     <array>
       <string>/Users/forensics/forensics/venv/bin/gunicorn</string>
       <string>-w4</string>
       <string>-b</string>
       <string>localhost:5000</string>
-      <string>forensics.server:create_app("/Users/forensics/forensics/forensics.conf")</string>
+      <string>forensics.server:create_app("/Users/forensics/forensics-conf/zipi-forensics.conf")</string>
       <string>--reload-extra-file</string>
-      <string>/usr/local/var/websites/zipi-forensics.gambitscheme.org/results/arctic.db</string>
+      <string>/Users/forensics/forensics-conf/zipi-forensics.conf</string>
+      <string>/Users/forensics/forensics-databases/zipi/arctic.db</string>
       <string>--pythonpath</string>
       <string>/Users/forensics/forensics/venv/bin/python</string>
     </array>
@@ -27,8 +28,8 @@
     <key>KeepAlive</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>/tmp/forensics.stdout</string>
+    <string>/tmp/zipi-forensics.stdout</string>
     <key>StandardErrorPath</key>
-    <string>/tmp/forensics.stderr</string>
+    <string>/tmp/zipi-forensics.stderr</string>
   </dict>
 </plist>
