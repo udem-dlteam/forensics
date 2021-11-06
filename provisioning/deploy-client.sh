@@ -4,9 +4,9 @@
 
 # "homepage": "https://zipi-forensics.gambitscheme.org/",
 
-CURRENT_URL=zipi-forensics.gambitscheme.org
-PUBLIC_URL=https://$CURRENT_URL/ npm run build && \
-rsync -r build/* gambit-forensics:/usr/local/var/websites/$CURRENT_URL/
+#CURRENT_URL=zipi-forensics.gambitscheme.org
+#PUBLIC_URL=https://$CURRENT_URL/ npm run build && \
+#rsync -r build/* gambit-forensics:/usr/local/var/websites/$CURRENT_URL/
 
 CURRENT_URL=forensics.gambitscheme.org
 PUBLIC_URL=https://$CURRENT_URL/ npm run build && \

@@ -39,7 +39,7 @@ class APILegacy(MethodView):
 
             # Commit name
             tags.append(sys.name + "-version")
-            commits_name = list(map(lambda x: x.timestamp.strftime("%-y%m%d%H%M ") + x.name[:5], commits))
+            commits_name = list(map(lambda x: x.timestamp.strftime("%-y%m%d%H%M ") + x.name, commits))
             meta = list(
                 map(
                     lambda x: f"{x.name}\ntime : {x.timestamp}\n description : {x.description}\n",
