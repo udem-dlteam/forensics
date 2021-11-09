@@ -837,10 +837,7 @@ module.exports.PlotGenerator = class {
     return title;
   }
 
-  ellipsis(string, length = 20) {
-    if (string.length > length) {
-      return `${string.slice(0, length)}...`;
-    }
+  ellipsis(string) {
     return string;
   }
 
@@ -1195,6 +1192,8 @@ module.exports.PlotGenerator = class {
       default:
         break;
     }
+
+    result.layout.titlefont = 8
 
     
     // Thumbnail processing
