@@ -1,0 +1,73 @@
+html, body {
+    height: 100%;
+}
+
+body {
+    overflow: hidden;
+}
+
+#app {
+    height: 100%;
+}
+
+#header {
+    height: 5%;
+}
+
+#footer {
+    height: 5%;
+}
+
+#contents {
+    height: 90%;
+}
+
+#options {
+    height: 85%;
+    float: left;
+    width: 15%;
+    display: inline-block;
+}
+
+#options-list {
+    height: 100%;
+    overflow: auto;
+}
+
+#plot {
+    height: 85%;
+    float: right;
+    width: 85%;
+    display: inline-block;
+}
+
+#presets-list {
+    overflow: auto;
+}
+
+#systems-list {
+    overflow: auto;
+}
+
+#benchmarks-list {
+    overflow: auto;
+}
+
+#commits-list {
+    overflow: auto;
+}
+
+#configs-list {
+    overflow: auto;
+}
+
+#chart {
+    height: 100%;
+    width: 100%;
+}
+
+select {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+}

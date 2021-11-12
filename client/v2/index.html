@@ -1,0 +1,116 @@
+<!doctype html>
+<html class="no-js" lang="">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title>Gambit Forensics</title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <link rel="stylesheet" href="main.css" type="text/css" media="screen" />
+        <link rel="stylesheet" href="billboard.min.css" type="text/css" media="screen" />
+
+        <script src="https://d3js.org/d3.v6.min.js"></script>
+        <script src="billboard.js"></script>
+
+    </head>
+    <body>
+        <!--[if lt IE 8]>
+            <p class="browserupgrade">
+            You are using an <strong>outdated</strong> browser. Please
+            <a href="http://browsehappy.com/">upgrade your browser</a> to improve
+            your experience.
+            </p>
+        <![endif]-->
+
+        <div id="app">
+            <div id="header">
+                <h1>Gambit Forensics</h1>
+            </div>
+            <div id="contents">
+                <div id="options">
+                    <h2>Options</h2>
+                    <div id="options-list">
+                        <div id="presets">
+                            <h3>Presets</h3>
+                            <select id="presets-list" name="presets">
+                            </select>
+                        </div>
+                        <div id="systems">
+                            <h3>Systems</h3>
+                            <select id="systems-list" name="systems">
+                            </select>
+                        </div>
+                        <div id="benchmarks">
+                            <h3>Benchmarks</h3>
+                            <select id="benchmarks-list" name="benchmarks" multiple>
+                            </select>
+                        </div>
+                        <div id="commits">
+                            <h3>Commits</h3>
+                            <select id="commits-list" name="commits" multiple>
+                            </select>
+                        </div>
+                        <div id="configs">
+                            <h3>Configs</h3>
+                            <select id="configs-list" name="configs">
+                            </select>
+                        </div>
+                        <div id="plot-type">
+                            <h3>Plot type</h3>
+                            <select id="plot-type-list" name="plot-type">
+                                <option value="bar">Bar chart</option>
+                                <option value="line">Line plot</option>
+                            </select>
+                        </div>
+                        <div id="x-axis">
+                            <h3>X axis</h3>
+                            <select id="x-axis-list" name="x-axis">
+                                <option value="commits">Commits</option>
+                                <option value="benchmarks">Benchmarks</option>
+                            </select>
+                        </div>
+                        <div id="normalization">
+                            <h3>Normalization</h3>
+                            <select id="normalization-list" name="normalization">
+                                <option value="none">None</option>
+                                <option value="minimum">Minimum</option>
+                                <option value="median">Median</option>
+                                <option value="maximum">Maximum</option>
+                            </select>
+                        </div>
+                        <div id="y-axis-scale">
+                            <h3>Y axis scale</h3>
+                            <select id="y-axis-scale-list" name="y-axis-scale">
+                                <option value="auto">Auto</option>
+                                <option value="linear">Linear</option>
+                                <option value="log">Log</option>
+                            </select>
+                        </div>
+                        <div id="Other">
+                            <h3>Other</h3>
+                            <input type="checkbox" id="mean" name="mean" checked>
+                            <label for="mean">Mean</label>
+                            <br />
+                            <input type="checkbox" id="sticky-zero" name="sticky-zero">
+                            <label for="sticky-zero">Sticky zero</label>
+                            <br />
+                            <input type="checkbox" id="sort-x-axis" name="sort-x-axis">
+                            <label for="sort-x-axis">Sort x axis</label>
+                        </div>
+                    </div>
+                </div>
+                <div id="plot">
+                    <h2>Plot</h2>
+                    <div id="chart">
+                    </div>
+                </div>
+            </div>
+            <div id="footer">
+                <a href="https://github.com/udem-dlteam/forensics">github.com/udem-dlteam/forensics</a>
+            </div>
+        </div>
+        <script src="presets.js" type="text/javascript"></script>
+        <script src="main.js" type="text/javascript"></script>
+    </body>
+</html>
