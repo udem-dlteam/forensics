@@ -141,7 +141,6 @@ function updatePlot() {
 }
 
 /* Main */
-var base = 'http://localhost:8888'
 var plotState = {};
 var forensicsData = {};
 var forensicsPresets = {};
@@ -173,4 +172,4 @@ selects.forEach((o) => {
    o.onchange = updatePlotState;
  })
 
-init(base+'/forensics.json');
+init('/forensics.json');
