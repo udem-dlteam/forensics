@@ -72,17 +72,9 @@ function initPresets(opts) {
       })
     }
 
-    var myPreset = new forensicsPreset({
-      name: "my preset",
-      benchmarks: ["gambit/r6rs/pi"],
-      commits: opts.gambit.commits,
-      xAxis: "commit",
-      plotType: "line"
-    });
-
     var defaultPreset = new forensicsPreset();
 
-    /* Custom presets */
+    /* Custom presets go here*/
     var gambitAllBenchmarksPreset = new forensicsPreset({
       name: "Last 5 Gambit commits, all benchmarks, by benchmark",
       benchmarks: opts.gambit.benchmarks,
