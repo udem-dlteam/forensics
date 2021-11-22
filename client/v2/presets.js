@@ -9,7 +9,7 @@
  * "all benchmarks".
  */
 function initPresets(opts) {
-  return (function () {
+  return (() => {
     var presets = [];
 
     /* Default preset from which all presets inherit */
@@ -25,11 +25,8 @@ function initPresets(opts) {
       _this.config = configSelect.value;
       _this.plotType = plotTypeSelect.value;
       _this.xAxis = xAxisSelect.value;
-      _this.normalization = normalizationSelect.value;
       _this.yAxisScale = yAxisScaleSelect.value;
-      _this.mean = meanCheckbox.checked;
-      _this.stickyZero = stickyZeroCheckbox.checked;
-      _this.sortXAxis = sortXAxisCheckbox.checked;
+      _this.sortType = sortTypeSelect.value;
 
       if (config !== undefined) {
         Object.keys(config).forEach((key) => {
@@ -63,11 +60,8 @@ function initPresets(opts) {
       setOptions(plotTypeSelect, preset.plotType);
 
       xAxisSelect.value = preset.xAxis;
-      normalizationSelect.value = preset.normalization;
       yAxisScaleSelect.value = preset.yAxisScale;
-      meanCheckbox.checked = preset.mean;
-      stickyZeroCheckbox.checked = preset.stickyZero;
-      sortXAxisCheckbox.checked = preset.sortXAxis;
+      sortTypeSelect.value = preset.sortType;
 
       updatePlotState();
     }
@@ -78,6 +72,14 @@ function initPresets(opts) {
       })
     }
 
+    var myPreset = new forensicsPreset({
+      name: "my preset",
+      benchmarks: ["gambit/r6rs/pi"],
+      commits: opts.gambit.commits,
+      xAxis: "commit",
+      plotType: "line"
+    });
+
     var defaultPreset = new forensicsPreset();
 
     /* Custom presets */
@@ -85,8 +87,7 @@ function initPresets(opts) {
       name: "Last 5 commits, all benchmarks, by benchmark",
       benchmarks: opts.gambit.benchmarks,
       commits: opts.gambit.commits.slice(-5),
-      xAxis: "benchmarks",
-      mean: true
+      xAxis: "benchmark"
     })
 
     /* Exports */
