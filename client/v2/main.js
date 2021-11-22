@@ -27,7 +27,7 @@ var selects = [benchmarkSelect, commitSelect, configSelect, plotTypeSelect,
                xAxisSelect,yAxisScaleSelect, sortTypeSelect];
 
 presetSelect.onchange = () => {
-  forensicsPresets.applyPreset(Number(this.value));
+  forensicsPresets.applyPreset(Number(presetSelect.value));
 }
 
 selects.forEach((o) => {

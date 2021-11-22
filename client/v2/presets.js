@@ -84,7 +84,7 @@ function initPresets(opts) {
 
     /* Custom presets */
     var gambitAllBenchmarksPreset = new forensicsPreset({
-      name: "Last 5 commits, all benchmarks, by benchmark",
+      name: "Last 5 Gambit commits, all benchmarks, by benchmark",
       benchmarks: opts.gambit.benchmarks,
       commits: opts.gambit.commits.slice(-5),
       xAxis: "benchmark"
