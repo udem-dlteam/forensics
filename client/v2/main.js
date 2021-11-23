@@ -133,7 +133,7 @@ function updatePlotState() {
       return (a, b) => a.benchmark.localeCompare(b.benchmark);
     }
     if (st === "benchmark-desc") {
-      return (a, b) => b.benchmark.localeCompare(b.benchmark);
+      return (a, b) => b.benchmark.localeCompare(a.benchmark);
     }
     if (st === "commit-asc") {
       return (a, b) => a.commit.localeCompare(b.commit);
