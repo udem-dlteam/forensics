@@ -35,11 +35,17 @@ selects.forEach((o) => {
 })
 
 // Utility function
-function setPlotTitle(s) {
-  plotTitleText.innerHTML = s;
+function setPlotTitle(title) {
+  plotTitleInput.value = title;
+  plotTitleText.innerHTML = title;
+  plotStateToURL();
 }
 
-plotTitleInput.oninput = (e) => setPlotTitle(e.target.value);
+// Don't regen whole plot when only changing the title
+plotTitleInput.oninput = (e) => {
+  setPlotTitle(e.target.value);
+  plotState.title = e.target.value;
+}
 
 // Utility function
 function getSelectedOptions(elem) {
@@ -66,6 +72,18 @@ function populateSelect(items, select) {
   setSelectSize(select);
 }
 
+// Utility function
+// Setting multiple options of a select element
+function setOptions(elem, values) {
+  for (const opt of elem.options) {
+    if (values.indexOf(opt.value) !== -1) {
+      opt.selected = true;
+    } else {
+      opt.selected = false;
+    }
+  }
+}
+
 /*
  * Data manipulation
  */
@@ -90,6 +108,7 @@ function populateOptions(data) {
 function updatePlotState() {
   // TODO: loop for multiple systems
 
+  plotState.title = plotTitleInput.value;
   plotState.system = systemSelect.value;
   plotState.benchmarks = getSelectedOptions(benchmarkSelect);
   plotState.commits = getSelectedOptions(commitSelect);
@@ -146,8 +165,15 @@ function updatePlotState() {
 
   plotState.yAxisScale = yAxisScaleSelect.value;
 
-  // Set the plot title
-  setPlotTitle(`${plotState.ordinal} value by ${plotState.xAxis}`);
+  // Set the plot title if it is set
+  if (plotState.title) {
+    setPlotTitle(plotState.title)
+  } else {
+    setPlotTitle(`${plotState.ordinal} value by ${plotState.xAxis}`);
+  }
+
+  // Change the URL for easy sharing
+  plotStateToURL();
 
   drawPlot();
 }
@@ -200,12 +226,18 @@ async function init(url) {
           data.results.forEach(o => {
             o.value = avg(o.value.map(Number));
           });
+
           forensicsData = data;
           populateOptions(data);
           forensicsPresets = initPresets(data.options);
           forensicsPresets.populatePresets();
-          forensicsPresets.applyPreset();
-          drawPlot();
+
+          if (window.location.search !== '') {
+            plotStateFromURL();
+          } else {
+            forensicsPresets.applyPreset();
+            drawPlot();
+          }
         });
       } else {
         console.log("Error getting options - ", res);
@@ -214,6 +246,45 @@ async function init(url) {
     .catch(err => {
       console.log("Error during fetch - ", err);
     });
+}
+
+// Sharing of plots
+function plotStateToURL() {
+  // Only keep certain attributes from the plotState object
+  // Keeping the whole object with all data is impractical.
+  const _plotState = (({
+    system, benchmarks, commits, config,
+    plotType, sortType, xAxis, title
+  }) => ({
+    system, benchmarks, commits, config,
+    plotType, sortType, xAxis, title
+  }))(plotState);
+
+  const url = new URLSearchParams(_plotState).toString();
+
+  window.history.pushState("", "", "?"+url);
+}
+
+// NOTE: Maybe unify this with 'applyPreset' from presets.js
+// TODO: Have global plot update lock (mutex) to prevent updates
+// on each param change?
+function plotStateFromURL() {
+  const params = new URLSearchParams(window.location.search);
+
+  // Multiplets
+  setOptions(benchmarkSelect, params.get("benchmarks"));
+  setOptions(commitSelect, params.get("commits"));
+
+  // Singlets
+  systemSelect.value = params.get("system");
+  configSelect.value = params.get("config");
+  plotTypeSelect.value = params.get("plotType");
+  xAxisSelect.value = params.get("xAxis");
+  sortTypeSelect.value = params.get("sortType");
+  plotTitleInput.value = params.get("title");
+
+  // Force recalculating data
+  updatePlotState();
 }
 
 init('/forensics.json');

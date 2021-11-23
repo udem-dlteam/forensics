@@ -16,7 +16,7 @@ function initPresets(opts) {
     function forensicsPreset(config) {
       var _this = this;
 
-      /* Default options */
+      /* Default options are retrieved from the HTML */
       _this.name = "Last 10 revisions, top 10 benchmarks, by commits"
       _this.system = 'gambit';
       _this.benchmarks = opts.gambit.benchmarks.slice(0, 10);
@@ -27,6 +27,7 @@ function initPresets(opts) {
       _this.xAxis = xAxisSelect.value;
       _this.yAxisScale = yAxisScaleSelect.value;
       _this.sortType = sortTypeSelect.value;
+      _this.title = plotTitleInput.value || false;
 
       if (config !== undefined) {
         Object.keys(config).forEach((key) => {
@@ -37,16 +38,6 @@ function initPresets(opts) {
       presets.push(_this);
     }
 
-    function setOptions(elem, values) {
-      for (const opt of elem.options) {
-        if (values.indexOf(opt.value) !== -1) {
-          opt.selected = true;
-        } else {
-          opt.selected = false;
-        }
-      }
-    }
-
     function applyPreset(index) {
       if (index === undefined) {
         var preset = presets[0];
@@ -54,14 +45,17 @@ function initPresets(opts) {
         preset = presets[index];
       }
 
+      // Multiplets
       setOptions(benchmarkSelect, preset.benchmarks);
       setOptions(commitSelect, preset.commits);
-      setOptions(configSelect, preset.config);
-      setOptions(plotTypeSelect, preset.plotType);
 
+      // Singlets
+      configSelect.value = preset.config;
+      plotTypeSelect.value = preset.plotType
       xAxisSelect.value = preset.xAxis;
       yAxisScaleSelect.value = preset.yAxisScale;
       sortTypeSelect.value = preset.sortType;
+      plotTitleInput.value = preset.title;
 
       updatePlotState();
     }
