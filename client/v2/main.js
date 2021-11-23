@@ -38,13 +38,13 @@ selects.forEach((o) => {
 function setPlotTitle(title) {
   plotTitleInput.value = title;
   plotTitleText.innerHTML = title;
-  plotStateToURL();
 }
 
 // Don't regen whole plot when only changing the title
 plotTitleInput.oninput = (e) => {
   setPlotTitle(e.target.value);
   plotState.title = e.target.value;
+  plotStateToURL();
 }
 
 // Utility function
