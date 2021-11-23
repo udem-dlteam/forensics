@@ -27,7 +27,7 @@ function initPresets(opts) {
       _this.xAxis = xAxisSelect.value;
       _this.yAxisScale = yAxisScaleSelect.value;
       _this.sortType = sortTypeSelect.value;
-      _this.title = plotTitleInput.value || false;
+      _this.title = plotTitleInput.value;
 
       if (config !== undefined) {
         Object.keys(config).forEach((key) => {

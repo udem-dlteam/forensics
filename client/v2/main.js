@@ -166,10 +166,10 @@ function updatePlotState() {
   plotState.yAxisScale = yAxisScaleSelect.value;
 
   // Set the plot title if it is set
-  if (plotState.title) {
-    setPlotTitle(plotState.title)
-  } else {
+  if (plotState.title === "") {
     setPlotTitle(`${plotState.ordinal} value by ${plotState.xAxis}`);
+  } else {
+    setPlotTitle(plotState.title)
   }
 
   // Change the URL for easy sharing
