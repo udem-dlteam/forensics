@@ -1,7 +1,7 @@
 /*
- * Globals
+ * Globals with default values
  */
-var plotState = {};
+var plotState = {reference: false};
 var forensicsData = {};
 var forensicsPresets = {}; /* Exported from presets.js */
 var chart = {};
@@ -19,12 +19,16 @@ const plotTypeSelect = document.getElementById("plot-type-list");
 const xAxisSelect = document.getElementById("x-axis-list");
 const yAxisScaleSelect = document.getElementById("y-axis-scale-list");
 const sortTypeSelect = document.getElementById("sort-type-list");
+const normalizationTypeSelect = document.getElementById("normalization-type-list");
 const plotTitleInput = document.getElementById('plot-title');
 const plotTitleText = document.getElementById('plot-title-text');
 const chartDiv = document.getElementById("chart");
+const stickyZeroCheckbox = document.getElementById("sticky-zero-cb");
+const plotSubtitleText = document.getElementById("plot-subtitle-text");
 
 var selects = [benchmarkSelect, commitSelect, configSelect, plotTypeSelect,
-               xAxisSelect,yAxisScaleSelect, sortTypeSelect];
+               xAxisSelect,yAxisScaleSelect, sortTypeSelect, stickyZeroCheckbox,
+              normalizationTypeSelect];
 
 presetSelect.onchange = () => {
   forensicsPresets.applyPreset(Number(presetSelect.value));
@@ -32,12 +36,16 @@ presetSelect.onchange = () => {
 
 selects.forEach((o) => {
   o.onchange = updatePlotState;
-})
+});
 
 // Utility function
 function setPlotTitle(title) {
   plotTitleInput.value = title;
   plotTitleText.innerHTML = title;
+}
+
+function setPlotSubtitle(subtitle) {
+  plotSubtitleText.innerHTML = subtitle;
 }
 
 // Don't regen whole plot when only changing the title
@@ -112,6 +120,16 @@ function updatePlotState() {
   plotState.system = systemSelect.value;
   plotState.benchmarks = getSelectedOptions(benchmarkSelect);
   plotState.commits = getSelectedOptions(commitSelect);
+  plotState.stickyZero = stickyZeroCheckbox.checked;
+  plotState.normalizationType = normalizationTypeSelect.value;
+
+  // Select the proper normalization procedure
+  var normalizationProc = (() => {
+    var nm = plotState.normalizationType;
+    if (nm === "relative") {
+      return (data, norm) => data.map(o => o/norm);
+    }
+  })
 
   // Select the proper data sorting procedure
   plotState.sortType = sortTypeSelect.value;
@@ -143,8 +161,11 @@ function updatePlotState() {
     }
   })();
 
-  // Produce the data consumed by d3
-  plotState.data = forensicsData.results.filter((o) => {
+  // Produce the data consumed by d3. Deep copy
+  // to avoid mutation issues when normalizing.
+  var _data = JSON.parse(JSON.stringify(forensicsData.results));
+
+  plotState.data = _data.filter((o) => {
     var bench_idx = plotState.benchmarks.indexOf(o.benchmark);
     var commit_idx = plotState.commits.indexOf(o.commit);
     if ((bench_idx !== -1) && (commit_idx !== -1)) {
@@ -152,6 +173,31 @@ function updatePlotState() {
     }
     return false;
   }).sort(sortProc);
+
+  // Normalize results if a reference is set.
+  // Inefficient. Change the underlying data structure for
+  // faster access or maybe binary search over sorted timestamps
+  function normalize(data, commit) {
+    function getReferenceValue(commit, bench) {
+      return forensicsData.results.filter(o => {
+        return (o.benchmark === bench) && (o.commit === commit);
+      })[0].value;
+    }
+    plotState.benchmarks.forEach(bench => {
+      // Value to normalize to
+      var norm = getReferenceValue(commit, bench);
+      // Mutate in a single pass
+      plotState.data.forEach(o => {
+        if (o.benchmark === bench) {
+          o.value = o.value / norm;
+        }
+      })
+    })
+  }
+
+  if (plotState.reference) {
+    normalize(plotState.data, plotState.reference);
+  }
 
   plotState.config = configSelect.value;
   plotState.plotType = plotTypeSelect.value;

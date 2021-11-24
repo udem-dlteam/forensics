@@ -35,7 +35,7 @@
                         </div>
                         <div id="plot-title-div">
                             <h3>Plot title</h3>
-                            <input id="plot-title" type="text" name="plot-title" value="" />
+                            <input id="plot-title" type="text" name="plot-title"/>
                         </div>
                         <div id="systems">
                             <h3>Systems</h3>
@@ -84,6 +84,13 @@
                                 <option value="commit-desc">Commit (desc)</option>
                             </select>
                         </div>
+                        <div id="normalization-type">
+                            <h3>Normalization type</h3>
+                            <select id="normalization-type-list" name="normalization-type">
+                                <option value="relative">Relative</option>
+                                <option value="percentage">Percentage</option>
+                            </select>
+                        </div>
                         <div id="y-axis-scale">
                             <h3>Y axis scale</h3>
                             <select id="y-axis-scale-list" name="y-axis-scale">
@@ -92,12 +99,18 @@
                                 <option value="log">Log</option>
                             </select>
                         </div>
+                        <div id="other">
+                            <h3>Other</h3>
+                            <input type="checkbox" id="sticky-zero-cb" name="sticky-zero" checked>
+                            <label for="sticky-zero">Sticky zero</label>
+                        </div>
                     </div>
                 </div>
                 <div id="plot">
                     <h2>Plot</h2>
                     <div id="chart">
                         <h4 id="plot-title-text">Plot title</h4>
+                        <h5 id="plot-subtitle-text"></h5>
                     </div>
                 </div>
             </div>

@@ -11,7 +11,13 @@ function drawBar() {
   // Keep only unique values
   const xDomain = new d3.InternSet(xs);
   const zDomain = new d3.InternSet(zs);
-  const yDomain = [0, d3.max(ys)];
+
+  // Handle sticky zero
+  if (plotState.stickyZero) {
+    var yDomain = [0, d3.max(ys)];
+  } else {
+    yDomain = [0.85 * d3.min(ys), d3.max(ys)]; // Keep space to show all bars
+  }
 
   // Full scale
   const xScale = d3.scaleBand(xDomain, [0, width]).paddingInner(0.1);
@@ -57,7 +63,7 @@ function drawBar() {
                  .attr("x", i => xScale(xs[i]) + xzScale(zs[i]))
                  .attr("y", i => yScale(ys[i]))
                  .attr("width", xzScale.bandwidth())
-                 .attr("height", i => yScale(0) - yScale(ys[i]))
+                 .attr("height", i => yScale(yDomain[0]) - yScale(ys[i]))
                  .attr("fill", i => zScale(zs[i]))
                  .on("mouseover", (event, i) => {
                    tooltip.transition()
@@ -71,6 +77,24 @@ function drawBar() {
                    tooltip.transition()
                           .duration(500)
                           .style("opacity", 0);
+                 })
+                 .on("click", (event, i) => {
+                   // Properly select the commit
+                   if (plotState.xAxis === "benchmark") {
+                     var ref = zs[i];
+                   } else if (plotState.xAxis === "commit") {
+                     ref = xs[i];
+                   }
+
+                   // Either clear or set the reference commit
+                   if (plotState.reference === ref) {
+                     plotState.reference = false;
+                     setPlotSubtitle("");
+                   } else {
+                     plotState.reference = ref;
+                     setPlotSubtitle(`(normalized to ${ref})`);
+                   }
+                   updatePlotState();
                  })
 
   svg.append("g")

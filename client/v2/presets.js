@@ -28,6 +28,8 @@ function initPresets(opts) {
       _this.yAxisScale = yAxisScaleSelect.value;
       _this.sortType = sortTypeSelect.value;
       _this.title = plotTitleInput.value;
+      _this.normalizationType = normalizationTypeSelect.value;
+      _this.stickyZero = stickyZeroCheckbox.checked;
 
       if (config !== undefined) {
         Object.keys(config).forEach((key) => {
@@ -56,6 +58,8 @@ function initPresets(opts) {
       yAxisScaleSelect.value = preset.yAxisScale;
       sortTypeSelect.value = preset.sortType;
       plotTitleInput.value = preset.title;
+      normalizationTypeSelect.value = preset.normalizationType;
+      stickyZeroCheckbox.checked = preset.stickyZero;
 
       updatePlotState();
     }

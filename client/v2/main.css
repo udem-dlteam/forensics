@@ -97,11 +97,15 @@ footer {
   height: 100%;
 }
 
-#plot-title {
+#plot-title-div {
   width: 100%;
 }
 
 #chart > h4 {
+  margin: 0;
+  text-align: center;
+}
+#chart > h5 {
   margin: 0;
   text-align: center;
 }
