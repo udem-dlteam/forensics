@@ -128,6 +128,21 @@ footer {
   r: 3;
 }
 
+.mean {
+  stroke: red;
+  stroke-width: 2;
+}
+
+.median {
+  stroke: blue;
+  stroke-width: 2;
+}
+
+.stddev {
+  stroke: green;
+  stroke-width: 2;
+}
+
 div.tooltip {
   position: absolute;
   text-align: left;

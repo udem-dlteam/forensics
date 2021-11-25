@@ -152,4 +152,33 @@ function drawBar() {
      .text(d => d)
      .attr("text-anchor", "left")
      .style("alignment-baseline", "middle")
+
+  // Mean, median, stddev
+  var _ys = ys.filter(o => o.value !== 0);
+  var mean = d3.mean(_ys);
+  var median = d3.median(_ys);
+  var stddev = d3.deviation(_ys);
+
+  function addLine(svg, y, text) {
+    svg.append("line")
+       .attr("class", text)
+       .attr("x1", 0)
+       .attr("y1", yScale(y))
+       .attr("x2", width)
+       .attr("y2", yScale(y));
+    svg.append("text")
+       .attr("x", width + 10)
+       .attr("y", yScale(y))
+       .style("fill", "currentColor")
+       .style("font-size", "10px")
+       .text(text)
+       .attr("text-anchor", "right")
+       .style("alignment-baseline", "middle");
+  }
+
+  addLine(svg, mean, "mean");
+  addLine(svg, median, "median");
+  addLine(svg, mean-stddev, "stddev");
+  addLine(svg, mean+stddev, "stddev");
+
 }
