@@ -1,7 +1,7 @@
 /*
  * Globals with default values
  */
-var plotState = {reference: false};
+var plotState = {};
 var forensicsData = {};
 var forensicsPresets = {}; /* Exported from presets.js */
 var chart = {};
@@ -34,11 +34,12 @@ presetSelect.onchange = () => {
   forensicsPresets.applyPreset(Number(presetSelect.value));
 }
 
+// Set the event handlers for our options elements to update
+// the plot state at every change
 selects.forEach((o) => {
   o.onchange = updatePlotState;
 });
 
-// Utility function
 function setPlotTitle(title) {
   plotTitleInput.value = title;
   plotTitleText.innerHTML = title;
@@ -46,6 +47,19 @@ function setPlotTitle(title) {
 
 function setPlotSubtitle(subtitle) {
   plotSubtitleText.innerHTML = subtitle;
+}
+
+// Utility functions for normalization
+function setReference(ref) {
+  plotState.reference = ref;
+  plotState.subtitle = `(normalized to ${ref})`;
+  setPlotSubtitle(plotState.subtitle);
+}
+
+function unsetReference() {
+  plotState.reference = false;
+  plotState.subtitle = "";
+  setPlotSubtitle(plotState.subtitle);
 }
 
 // Don't regen whole plot when only changing the title
@@ -135,10 +149,10 @@ function updatePlotState() {
   plotState.sortType = sortTypeSelect.value;
   var sortProc = (() => {
     var st = plotState.sortType;
-    if (st === "timestamp-asc") {
+    if (st === "commit-timestamp-asc") {
       return (a, b) => a.timestamp - b.timestamp;
     }
-    if (st === "timestamp-desc") {
+    if (st === "commit-timestamp-desc") {
       return (a, b) => b.timestamp - a.timestamp;
     }
     if (st === "value-asc") {
@@ -152,12 +166,6 @@ function updatePlotState() {
     }
     if (st === "benchmark-desc") {
       return (a, b) => b.benchmark.localeCompare(a.benchmark);
-    }
-    if (st === "commit-asc") {
-      return (a, b) => a.commit.localeCompare(b.commit);
-    }
-    if (st === "commit-desc") {
-      return (a, b) => b.commit.localeCompare(a.commit);
     }
   })();
 
@@ -177,15 +185,15 @@ function updatePlotState() {
   // Normalize results if a reference is set.
   // Inefficient. Change the underlying data structure for
   // faster access or maybe binary search over sorted timestamps
-  function normalize(data, commit) {
-    function getReferenceValue(commit, bench) {
+  function normalize(data, ref) {
+    function getReferenceValue(ref, bench) {
       return forensicsData.results.filter(o => {
-        return (o.benchmark === bench) && (o.commit === commit);
+        return (o.benchmark === bench) && (o.commit === ref);
       })[0].value;
     }
     plotState.benchmarks.forEach(bench => {
       // Value to normalize to
-      var norm = getReferenceValue(commit, bench);
+      var norm = getReferenceValue(ref, bench);
       // Mutate in a single pass
       plotState.data.forEach(o => {
         if (o.benchmark === bench) {
@@ -217,6 +225,9 @@ function updatePlotState() {
   } else {
     setPlotTitle(plotState.title)
   }
+
+  // Set the plot subtitle
+  setPlotSubtitle(plotState.subtitle);
 
   // Change the URL for easy sharing
   plotStateToURL();
@@ -300,10 +311,12 @@ function plotStateToURL() {
   // Keeping the whole object with all data is impractical.
   const _plotState = (({
     system, benchmarks, commits, config,
-    plotType, sortType, xAxis, title
+    plotType, sortType, xAxis, title, reference,
+    normalizationType, stickyZero, subtitle
   }) => ({
     system, benchmarks, commits, config,
-    plotType, sortType, xAxis, title
+    plotType, sortType, xAxis, title, reference,
+    normalizationType, stickyZero, subtitle
   }))(plotState);
 
   const url = new URLSearchParams(_plotState).toString();
@@ -328,6 +341,17 @@ function plotStateFromURL() {
   xAxisSelect.value = params.get("xAxis");
   sortTypeSelect.value = params.get("sortType");
   plotTitleInput.value = params.get("title");
+  normalizationTypeSelect.value = params.get("normalizationType");
+
+  // Serialisation produces a string, which is truthy
+  if (params.get("stickyZero") === "true") {
+    stickyZeroCheckbox.checked = true;
+  } else {
+    stickyZeroCheckbox.checked = false;
+  }
+
+  plotState.reference = params.get("reference");
+  plotState.subtitle = params.get("subtitle");
 
   // Force recalculating data
   updatePlotState();

@@ -116,6 +116,14 @@ footer {
   stroke-width: 2;
 }
 
+.tick > line {
+  opacity: 0.5;
+}
+
+.reference {
+  fill: black;
+}
+
 .dot {
   r: 3;
 }

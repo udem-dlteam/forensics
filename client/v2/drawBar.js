@@ -16,7 +16,8 @@ function drawBar() {
   if (plotState.stickyZero) {
     var yDomain = [0, d3.max(ys)];
   } else {
-    yDomain = [0.85 * d3.min(ys), d3.max(ys)]; // Keep space to show all bars
+    yDomain = [0.85 * d3.min(ys, d => d || Infinity), // Ignore zero values in scaling
+               d3.max(ys)]; // Keep space to show all bars
   }
 
   // Full scale
@@ -46,8 +47,8 @@ function drawBar() {
                 .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
   svg.append("g")
-     .call(yAxis)
-     .attr("class", "y-axis")
+     .call(yAxis.tickSize(-width))
+     .call(g => g.select(".domain").remove()) // Remove top tick line
      .call(g => g.append("text")
                  .attr("x", -margin.left / 2)
                  .attr("y", -margin.top / 2)
@@ -64,7 +65,20 @@ function drawBar() {
                  .attr("y", i => yScale(ys[i]))
                  .attr("width", xzScale.bandwidth())
                  .attr("height", i => yScale(yDomain[0]) - yScale(ys[i]))
-                 .attr("fill", i => zScale(zs[i]))
+                 .attr("fill", i => {
+                   var ref = plotState.reference;
+                   // Properly select commit based on x axis
+                   if (plotState.xAxis === "commit") {
+                     var c = xs[i];
+                   } else if (plotState.xAxis === "benchmark") {
+                     c = zs[i];
+                   }
+                   // Color the reference for easier identification
+                   if (ref && (c === ref)) {
+                     return "#000000";
+                   }
+                   return zScale(zs[i]);
+                 })
                  .on("mouseover", (event, i) => {
                    tooltip.transition()
                           .duration(200)
@@ -88,11 +102,9 @@ function drawBar() {
 
                    // Either clear or set the reference commit
                    if (plotState.reference === ref) {
-                     plotState.reference = false;
-                     setPlotSubtitle("");
+                     unsetReference();
                    } else {
-                     plotState.reference = ref;
-                     setPlotSubtitle(`(normalized to ${ref})`);
+                     setReference(ref);
                    }
                    updatePlotState();
                  })

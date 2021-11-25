@@ -74,14 +74,12 @@
                         <div id="sort-type">
                             <h3>Sort type</h3>
                             <select id="sort-type-list" name="sort-type">
-                                <option value="timestamp-asc">Timestamp (asc)</option>
-                                <option value="timestamp-desc">Timestamp (desc)</option>
+                                <option value="commit-timestamp-asc">Commit (timestamp, asc)</option>
+                                <option value="commit-timestamp-desc">Commit (timestamp, desc)</option>
                                 <option value="value-asc">Value (asc)</option>
                                 <option value="value-desc">Value (desc)</option>
-                                <option value="benchmark-asc">Benchmark (asc)</option>
-                                <option value="benchmark-desc">Benchmark (desc)</option>
-                                <option value="commit-asc">Commit (asc)</option>
-                                <option value="commit-desc">Commit (desc)</option>
+                                <option value="benchmark-asc">Benchmark (alphabetical, asc)</option>
+                                <option value="benchmark-desc">Benchmark (alphabetical, desc)</option>
                             </select>
                         </div>
                         <div id="normalization-type">
@@ -101,7 +99,7 @@
                         </div>
                         <div id="other">
                             <h3>Other</h3>
-                            <input type="checkbox" id="sticky-zero-cb" name="sticky-zero" checked>
+                            <input type="checkbox" id="sticky-zero-cb" name="sticky-zero">
                             <label for="sticky-zero">Sticky zero</label>
                         </div>
                     </div>

@@ -17,10 +17,10 @@ function initPresets(opts) {
       var _this = this;
 
       /* Default options are retrieved from the HTML */
-      _this.name = "Last 10 revisions, top 10 benchmarks, by commits"
+      _this.name = "All releases, normalized to the latest"
       _this.system = 'gambit';
-      _this.benchmarks = opts.gambit.benchmarks.slice(0, 10);
-      _this.commits = opts.gambit.commits.slice(-10);
+      _this.benchmarks = opts[_this.system].benchmarks.slice(0, 1); // First benchmark
+      _this.commits = opts[_this.system].commits; // All commits
       /* Uses the first value set in index.html by default */
       _this.config = configSelect.value;
       _this.plotType = plotTypeSelect.value;
@@ -29,6 +29,7 @@ function initPresets(opts) {
       _this.sortType = sortTypeSelect.value;
       _this.title = plotTitleInput.value;
       _this.normalizationType = normalizationTypeSelect.value;
+      _this.reference = _this.commits.at(-1); // Normalize to latest commit
       _this.stickyZero = stickyZeroCheckbox.checked;
 
       if (config !== undefined) {
@@ -61,6 +62,10 @@ function initPresets(opts) {
       normalizationTypeSelect.value = preset.normalizationType;
       stickyZeroCheckbox.checked = preset.stickyZero;
 
+      // Manually set plotState.reference since this variable needs to
+      // survive plotState updates.
+      setReference(preset.reference);
+
       updatePlotState();
     }
 
@@ -73,12 +78,15 @@ function initPresets(opts) {
     var defaultPreset = new forensicsPreset();
 
     /* Custom presets go here*/
-    var gambitAllBenchmarksPreset = new forensicsPreset({
-      name: "Last 5 Gambit commits, all benchmarks, by benchmark",
+    var gambitAllReleasesPreset = new forensicsPreset({
+      name: "Latest release, all benchmarks",
       benchmarks: opts.gambit.benchmarks,
-      commits: opts.gambit.commits.slice(-5),
-      xAxis: "benchmark"
-    })
+      commits: [opts.gambit.commits.at(-1)],
+      xAxis: "benchmark",
+      plotType: "bar",
+      sortType: "value-desc",
+      reference: false
+    });
 
     /* Exports */
     return {
