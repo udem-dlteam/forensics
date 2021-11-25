@@ -10,6 +10,7 @@
         <link rel="stylesheet" href="main.css" type="text/css" media="screen" />
 
         <script src="d3_7.js"></script>
+        <script src="FileSaver.min.js"></script>
     </head>
     <body>
         <!--[if lt IE 8]>
@@ -28,6 +29,9 @@
                 <div id="options">
                     <h2>Options</h2>
                     <div id="options-list">
+                        <div>
+                            <button id="export-svg">Export SVG</button>
+                        </div>
                         <div id="presets">
                             <h3>Presets</h3>
                             <select id="presets-list" name="presets">

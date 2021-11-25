@@ -25,6 +25,7 @@ const plotTitleText = document.getElementById('plot-title-text');
 const chartDiv = document.getElementById("chart");
 const stickyZeroCheckbox = document.getElementById("sticky-zero-cb");
 const plotSubtitleText = document.getElementById("plot-subtitle-text");
+const exportSVGBtn = document.getElementById("export-svg");
 
 var selects = [benchmarkSelect, commitSelect, configSelect, plotTypeSelect,
                xAxisSelect,yAxisScaleSelect, sortTypeSelect, stickyZeroCheckbox,
@@ -39,6 +40,25 @@ presetSelect.onchange = () => {
 selects.forEach((o) => {
   o.onchange = updatePlotState;
 });
+
+exportSVGBtn.onclick = () => {
+  var path = prompt("Export SVG to path:", "chart.svg");
+  return exportSVG(path);
+}
+
+// https://stackoverflow.com/a/66881124
+function exportSVG(path){
+  fetch('/main.css')
+    .then(response => response.text())
+    .then(text => {
+      var svg_data = document.getElementsByTagName("svg")[0].innerHTML
+      var head = '<svg title="chart" version="1.1" xmlns="http://www.w3.org/2000/svg">'
+      var style = "<style>" + text + "</style>"
+      var full_svg = head +  style + svg_data + "</svg>"
+      var blob = new Blob([full_svg], {type: "image/svg+xml"});
+      saveAs(blob, path);
+    })
+};
 
 function setPlotTitle(title) {
   plotTitleInput.value = title;
