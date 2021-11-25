@@ -179,7 +179,7 @@ function drawBar() {
   svg.append("g")
      .attr("transform", `translate(${width},0)`)
      .call(statsAxis
-           .tickSize(20)
+           .tickSize(10)
            .tickValues(stats)
            .tickFormat((d, i) => statsLabels[i]))
      .call(g => g.select(".domain").remove());
