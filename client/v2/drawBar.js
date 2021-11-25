@@ -115,6 +115,17 @@ function drawBar() {
      .attr("transform", "translate(0," + height + ")") // lower the axis
      .selectAll("text")
      .style("text-anchor", "start")
+     .style("font-size", () => {
+       var len = ys.length;
+       if (len > 40) {
+         var s = width / ys.length;
+         if (s > 2) {
+           return (s - 2) + "px";
+         } else {
+           return "1px";
+         }
+       }
+     })
      .attr("dx", ".8em")
      .attr("dy", "-5px")
      .attr("transform", "rotate(90)");
