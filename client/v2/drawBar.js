@@ -8,16 +8,38 @@ function drawBar() {
   const ys = d3.map(data, o => o.value);
   const zs = d3.map(data, o => o[plotState.ordinal]);
 
+  // Mean, median, stddev
+  var _ys = ys.filter(o => o.value !== 0);
+  var mean = d3.mean(_ys);
+  var median = d3.median(_ys);
+  var stddev = d3.deviation(_ys);
+
+  // Remove negative mean - stddev value
+  if ((mean - stddev) < 0) {
+    var stats = [mean, median, mean + stddev];
+    var statsLabels = [`mean (${mean.toFixed(2)})`,
+                       `median (${median.toFixed(2)})`,
+                       `stddev+ (${(mean + stddev).toFixed(2)})`]
+  } else {
+    stats = [mean, median, mean-stddev, mean+stddev];
+    var statsLabels = [`mean (${mean.toFixed(2)})`,
+                       `median (${median.toFixed(2)})`,
+                       `stddev- (${(mean - stddev).toFixed(2)})`,
+                       `stddev+ (${(mean + stddev).toFixed(2)})`]
+  }
+
   // Keep only unique values
   const xDomain = new d3.InternSet(xs);
   const zDomain = new d3.InternSet(zs);
 
   // Handle sticky zero
+  const yMax = Math.ceil(10 * (mean + stddev)) / 10;
   if (plotState.stickyZero) {
-    var yDomain = [0, d3.max(ys)];
+    // Draw scales up to ceiling of decimal place
+    var yDomain = [0, yMax];
   } else {
     yDomain = [0.85 * d3.min(ys, d => d || Infinity), // Ignore zero values in scaling
-               d3.max(ys)]; // Keep space to show all bars
+               yMax]; // Keep space to show all bars
   }
 
   // Full scale
@@ -135,50 +157,30 @@ function drawBar() {
      .data(zDomain)
      .enter()
      .append("rect")
-     .attr("x", width + 10)
+     .attr("x", width + 85)
      .attr("y", (d, i) => margin.top + i * 25)
      .attr("width", 10)
      .attr("height", 10)
-  // .attr("r", 7)
     .style("fill", zScale);
 
   svg.selectAll("legendLabels")
      .data(zDomain)
      .enter()
      .append("text")
-     .attr("x", width + 30)
+     .attr("x", width + 100)
      .attr("y", (d, i) => margin.top + i * 25 + 5)
      .style("fill", "currentColor")
      .text(d => d)
      .attr("text-anchor", "left")
      .style("alignment-baseline", "middle")
 
-  // Mean, median, stddev
-  var _ys = ys.filter(o => o.value !== 0);
-  var mean = d3.mean(_ys);
-  var median = d3.median(_ys);
-  var stddev = d3.deviation(_ys);
-
-  function addLine(svg, y, text) {
-    svg.append("line")
-       .attr("class", text)
-       .attr("x1", 0)
-       .attr("y1", yScale(y))
-       .attr("x2", width)
-       .attr("y2", yScale(y));
-    svg.append("text")
-       .attr("x", width + 10)
-       .attr("y", yScale(y))
-       .style("fill", "currentColor")
-       .style("font-size", "10px")
-       .text(text)
-       .attr("text-anchor", "right")
-       .style("alignment-baseline", "middle");
-  }
-
-  addLine(svg, mean, "mean");
-  addLine(svg, median, "median");
-  addLine(svg, mean-stddev, "stddev");
-  addLine(svg, mean+stddev, "stddev");
-
+  // Right y axis for statistics
+  const statsAxis = d3.axisRight(yScale).ticks(stats.length);
+  svg.append("g")
+     .attr("transform", `translate(${width},0)`)
+     .call(statsAxis
+           .tickSize(20)
+           .tickValues(stats)
+           .tickFormat((d, i) => statsLabels[i]))
+     .call(g => g.select(".domain").remove());
 }

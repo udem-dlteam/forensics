@@ -189,11 +189,8 @@ function updatePlotState() {
     }
   })();
 
-  // Produce the data consumed by d3. Deep copy
-  // to avoid mutation issues when normalizing.
-  var _data = JSON.parse(JSON.stringify(forensicsData.results));
-
-  plotState.data = _data.filter((o) => {
+  // Produce the data consumed by d3.
+  plotState.data = forensicsData.results.filter((o) => {
     var bench_idx = plotState.benchmarks.indexOf(o.benchmark);
     var commit_idx = plotState.commits.indexOf(o.commit);
     if ((bench_idx !== -1) && (commit_idx !== -1)) {
@@ -201,6 +198,9 @@ function updatePlotState() {
     }
     return false;
   }).sort(sortProc);
+
+  // Deep copy to avoid mutation issues
+  plotState.data = JSON.parse(JSON.stringify(plotState.data));
 
   // Normalize results if a reference is set.
   // Inefficient. Change the underlying data structure for

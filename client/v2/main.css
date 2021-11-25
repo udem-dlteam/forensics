@@ -117,6 +117,7 @@ footer {
 }
 
 .tick > line {
+  stroke-dasharray: 5, 5;
   opacity: 0.5;
 }
 
@@ -126,21 +127,6 @@ footer {
 
 .dot {
   r: 3;
-}
-
-.mean {
-  stroke: red;
-  stroke-width: 2;
-}
-
-.median {
-  stroke: blue;
-  stroke-width: 2;
-}
-
-.stddev {
-  stroke: green;
-  stroke-width: 2;
 }
 
 div.tooltip {
