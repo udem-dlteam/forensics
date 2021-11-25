@@ -20,7 +20,7 @@ function initPresets(opts) {
       _this.name = "All releases, normalized to the latest"
       _this.system = 'gambit';
       _this.benchmarks = opts[_this.system].benchmarks.slice(0, 1); // First benchmark
-      _this.commits = opts[_this.system].commits.slice(-40); // 40 more recent commits
+      _this.commits = opts[_this.system].commits; // All commits
       /* Uses the first value set in index.html by default */
       _this.config = configSelect.value;
       _this.plotType = plotTypeSelect.value;
