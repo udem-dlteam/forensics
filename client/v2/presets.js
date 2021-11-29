@@ -29,8 +29,9 @@ function initPresets(opts) {
       _this.sortType = sortTypeSelect.value;
       _this.title = plotTitleInput.value;
       _this.normalizationType = normalizationTypeSelect.value;
-      _this.reference = _this.commits.at(-1); // Normalize to latest commit
+      _this.reference = _this.commits[_this.commits.length - 1]; // Normalize to latest commit
       _this.stickyZero = stickyZeroCheckbox.checked;
+      _this.geometricMean = geometricMeanCheckbox.checked;
 
       if (config !== undefined) {
         Object.keys(config).forEach((key) => {
@@ -61,6 +62,7 @@ function initPresets(opts) {
       plotTitleInput.value = preset.title;
       normalizationTypeSelect.value = preset.normalizationType;
       stickyZeroCheckbox.checked = preset.stickyZero;
+      geometricMeanCheckbox.checked = preset.geometricMean;
 
       // Manually set plotState.reference since this variable needs to
       // survive plotState updates.
@@ -81,7 +83,7 @@ function initPresets(opts) {
     var gambitAllReleasesPreset = new forensicsPreset({
       name: "Latest release, all benchmarks",
       benchmarks: opts.gambit.benchmarks,
-      commits: [opts.gambit.commits.at(-1)],
+      commits: [opts.gambit.commits[opts.gambit.commits.length - 1]],
       xAxis: "benchmark",
       plotType: "bar",
       sortType: "value-desc",

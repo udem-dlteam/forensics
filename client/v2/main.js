@@ -26,10 +26,11 @@ const chartDiv = document.getElementById("chart");
 const stickyZeroCheckbox = document.getElementById("sticky-zero-cb");
 const plotSubtitleText = document.getElementById("plot-subtitle-text");
 const exportSVGBtn = document.getElementById("export-svg");
+const geometricMeanCheckbox = document.getElementById("geometric-mean-cb");
 
 var selects = [benchmarkSelect, commitSelect, configSelect, plotTypeSelect,
                xAxisSelect,yAxisScaleSelect, sortTypeSelect, stickyZeroCheckbox,
-              normalizationTypeSelect];
+              normalizationTypeSelect, geometricMeanCheckbox];
 
 presetSelect.onchange = () => {
   forensicsPresets.applyPreset(Number(presetSelect.value));
@@ -156,6 +157,7 @@ function updatePlotState() {
   plotState.commits = getSelectedOptions(commitSelect);
   plotState.stickyZero = stickyZeroCheckbox.checked;
   plotState.normalizationType = normalizationTypeSelect.value;
+  plotState.geometricMean = geometricMeanCheckbox.checked;
 
   // Select the proper normalization procedure
   var normalizationProc = (() => {
@@ -223,8 +225,52 @@ function updatePlotState() {
     })
   }
 
-  if (plotState.reference) {
+  if (plotState.reference && !plotState.geometricMean) {
     normalize(plotState.data, plotState.reference);
+  }
+
+  // NOTE: The commutator of the geometric mean and normalization is
+  // 1/gmean(reference commit)
+  if (plotState.geometricMean) {
+    // Construct a new data array containing only the geometric mean
+    var _data = [];
+    var ref_gmean = 1;
+    plotState.commits.forEach(commit => {
+      // Construct synthetic object
+      var obj = {
+        commit: commit,
+        benchmark: `Geometric mean (${plotState.benchmarks.length})`,
+        value: 1
+      };
+      // Coalesce on benchmarks
+      plotState.data.forEach(o => {
+        if (o.commit === commit) {
+          var val = o.value;
+          // Some values might be undefined
+          if (val === undefined) {
+            val = 1;
+          }
+          if (plotState.reference && (o.commit === plotState.reference)) {
+            ref_gmean = ref_gmean * val;
+          }
+          // Multiply values for all benchmarks
+          obj.value = obj.value * o.value;
+        }
+      })
+      // Take the Nth root to get the gmean
+      obj.value = Math.pow(obj.value, 1/plotState.benchmarks.length);
+      _data.push(obj);
+    })
+
+    // Factor in the commutator to keep normalization at 1
+    ref_gmean = Math.pow(ref_gmean, 1/plotState.benchmarks.length);
+
+    // Renormalize results
+    _data.forEach(o => {
+      o.value = o.value / ref_gmean;
+    });
+
+    plotState.data = _data;
   }
 
   plotState.config = configSelect.value;
@@ -257,6 +303,10 @@ function updatePlotState() {
 
 function avg(v) {
   return (v.reduce((a, b) => a + b, 0) / v.length) || 0;
+}
+
+function gmean(a) {
+  return Math.pow(a.reduce((a, b) => a*b, 1), 1/a.length) || 0;
 }
 
 /*
