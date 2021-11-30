@@ -198,13 +198,30 @@ fetch_to_local_repo()
 }
 
 
+for_each_tagged_commit()
+{
+  for COMMIT in `cd "$REPO_DIR" ; git tag --list --format="%(refname)" | sed -e "s,^refs/tags/,,g" | grep "$TAG_FILTER"` ; do
+
+    COMMIT_TIME="`cd \"$REPO_DIR\" ; git log --format=%ct -n 1 \"refs/tags/$COMMIT\"`"
+    COMMIT_HASH="`cd \"$REPO_DIR\" ; git log --format=format:%H -n 1 \"refs/tags/$COMMIT\"`"
+    COMMIT_BRANCH="$COMMIT"
+
+    export FORENSICS_DIR REPO_DIR BUILD_DIR SYSTEM CONFIG COMMIT COMMIT_HASH COMMIT_TIME COMMIT_BRANCH
+
+    $1
+
+  done
+}
+
+
 for_each_commit()
 {
-  NEXT_SELECTED_COMMIT_TIME="9999999999"
-
+  INFINITE_COMMIT_TIME="9999999999"
   ALL_BRANCHES="`cd \"$REPO_DIR\" ; git branch --list --remote | grep \"^  origin/[^ ][^ ]*\$\" | sed -e \"s@  origin/@@\"`"
 
   for BRANCH in $ALL_BRANCHES ; do
+
+    echo "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% BRANCH=$BRANCH"
 
     NB_TASKS_FOR_THIS_BRANCH="0"
     IS_A_MAIN_BRANCH="no"
@@ -217,40 +234,46 @@ for_each_commit()
 
     (cd "$REPO_DIR" ; git checkout "origin/$BRANCH")
 
-    COMMIT="`cd \"$REPO_DIR\" ; git log --format=format:%H -n 1`"
+    COMMIT_HASH="no_commit_sha1"
+    COMMIT_TIME="$INFINITE_COMMIT_TIME"
+    PREV_COMMIT_HASH="`cd \"$REPO_DIR\" ; git log --format=format:%H -n 1`"
 
-    while true ; do
+    while [ "$(($COMMIT_TIME >= $DATE1_TIME))" == 1 ] ; do
 
-      COMMIT_TIME="`cd \"$REPO_DIR\" ; git log --no-walk --format=%ct \"$COMMIT\"`"
-      if [ "$(($COMMIT_TIME < $DATE1_TIME))" == 1 ] ; then
-        # this commit is beyond the period of time of interest so
-        # stop iterating over this branch's commit history
-        break
-      fi
+      # the next commit is in the period of time of interest
+
+#      (cd "$REPO_DIR" ; git log -n 1 "$COMMIT_HASH" | grep Date:)
+      PREV_COMMIT_TIME="`cd \"$REPO_DIR\" ; git log --no-walk --format=%ct \"$PREV_COMMIT_HASH\"`"
 
       SELECT="0"
 
-      if [ "$(($COMMIT_TIME >= $DATE3_TIME))" == 1 ] ; then
-        if [ "$(($SPACING3_TIME == 0 || $COMMIT_TIME / $SPACING3_TIME < $NEXT_SELECTED_COMMIT_TIME / $SPACING3_TIME))" == 1 ] ; then
-          SELECT="1"
-        fi
-      else
-        if [ "$(($COMMIT_TIME >= $DATE2_TIME))" == 1 ] ; then
-          if [ "$(($SPACING2_TIME == 0 || $COMMIT_TIME / $SPACING2_TIME < $NEXT_SELECTED_COMMIT_TIME / $SPACING2_TIME))" == 1 ] ; then
-            SELECT="1"
+      if [ "$(($COMMIT_TIME < $INFINITE_COMMIT_TIME))" == 1 ] ; then
+#        if ( cd "$REPO_DIR" ; git describe --exact-match --tags "$COMMIT_HASH^" | grep "$TAG_FILTER" ) > /dev/null 2>&1 ; then
+#          SELECT="1"
+#        else
+          if [ "$(($PREV_COMMIT_TIME >= $DATE3_TIME))" == 1 ] ; then
+            if [ "$(($SPACING3_TIME == 0 || $PREV_COMMIT_TIME / $SPACING3_TIME < $COMMIT_TIME / $SPACING3_TIME))" == 1 ] ; then
+              SELECT="1"
+            fi
+          else
+            if [ "$(($PREV_COMMIT_TIME >= $DATE2_TIME))" == 1 ] ; then
+              if [ "$(($SPACING2_TIME == 0 || $PREV_COMMIT_TIME / $SPACING2_TIME < $COMMIT_TIME / $SPACING2_TIME))" == 1 ] ; then
+                SELECT="1"
+              fi
+            else
+              if [ "$(($SPACING1_TIME == 0 || $PREV_COMMIT_TIME / $SPACING1_TIME < $COMMIT_TIME / $SPACING1_TIME))" == 1 ] ; then
+                SELECT="1"
+              fi
+            fi
           fi
-        else
-          if [ "$(($SPACING1_TIME == 0 || $COMMIT_TIME / $SPACING1_TIME < $NEXT_SELECTED_COMMIT_TIME / $SPACING1_TIME))" == 1 ] ; then
-            SELECT="1"
-          fi
-        fi
+#        fi
       fi
       
       if [ "$SELECT" == "1" ] ; then
 
         # this commit is in the period of interest and relevant
 
-        COMMIT_BRANCHES="`cd \"$REPO_DIR\" ; git branch --list --remote --contains \"$COMMIT\" | grep \"^  origin/[^ ][^ ]*\$\" | sed -e \"s@  origin/@@\"`"
+        COMMIT_BRANCHES="`cd \"$REPO_DIR\" ; git branch --list --remote --contains \"$COMMIT_HASH\" | grep \"^  origin/[^ ][^ ]*\$\" | sed -e \"s@  origin/@@\"`"
 
         if [ "$IS_A_MAIN_BRANCH" != "yes" ] ; then
           # this commit is in the history of a branch that is not a main branch
@@ -263,7 +286,7 @@ for_each_commit()
             # the commit is in the history of exactly one branch that is
             # not a main branch so check that the commit message contains
             # the special marker "[forensics]"
-            if ! ( cd "$REPO_DIR" ; git log --format=%B -n 1 "$COMMIT" | fgrep "[forensics]" > /dev/null ) ; then
+            if ! ( cd "$REPO_DIR" ; git log --format=%B -n 1 "$COMMIT_HASH" | fgrep "[forensics]" > /dev/null ) ; then
               # the commit message does not contain "[forensics]" so
               # stop iterating over this branch's commit history
               break
@@ -273,14 +296,19 @@ for_each_commit()
 
         COMMIT_BRANCH="$BRANCH"
 
-        export FORENSICS_DIR REPO_DIR BUILD_DIR SYSTEM CONFIG COMMIT COMMIT_TIME COMMIT_BRANCH
+        COMMIT="`cd \"$REPO_DIR\" ; git describe --tags \"$COMMIT_HASH\"`"
 
-        SELECT="`cd \"system-repos/$SYSTEM\" ; ../../system-configs/$SYSTEM/filter $COMMIT $COMMIT_TIME $COMMIT_BRANCH $CONFIG $SYSTEM`"
+        if [ "$COMMIT" == "" ] ; then
+          COMMIT="$COMMIT_HASH"
+        fi
+
+        export FORENSICS_DIR REPO_DIR BUILD_DIR SYSTEM CONFIG COMMIT COMMIT_HASH COMMIT_TIME COMMIT_BRANCH
+
+        SELECT="`cd \"system-repos/$SYSTEM\" ; ../../system-configs/$SYSTEM/filter $COMMIT $COMMIT_HASH $COMMIT_TIME $COMMIT_BRANCH $CONFIG $SYSTEM`"
 
         if [ "$SELECT" == "1" ] ; then
-          echo "================== SYSTEM=$SYSTEM CONFIG=$CONFIG COMMIT=$COMMIT COMMIT_TIME=$COMMIT_TIME COMMIT_BRANCH=$COMMIT_BRANCH"
+          echo "================== SYSTEM=$SYSTEM CONFIG=$CONFIG COMMIT=$COMMIT COMMIT_HASH=$COMMIT_HASH COMMIT_TIME=$COMMIT_TIME COMMIT_BRANCH=$COMMIT_BRANCH"
           $1
-          NEXT_SELECTED_COMMIT_TIME="$COMMIT_TIME"
           if [ "$(($NB_TASKS_FOR_THIS_BRANCH >= $MAX_TASKS_PER_BRANCH))" == 1 ] ; then
             break
           fi
@@ -291,12 +319,15 @@ for_each_commit()
         fi
       fi
 
-      if ! ( cd "$REPO_DIR" ; git log --format=format:%H -n 1 "$COMMIT^" ) > previous-commit-$$ 2> /dev/null ; then
+      if ! ( cd "$REPO_DIR" ; git log --format=format:%H -n 1 "$PREV_COMMIT_HASH^" ) > previous-commit-$$ 2> /dev/null ; then
         rm -f previous-commit-$$
         break
       fi
 
-      COMMIT="`cat previous-commit-$$`"
+      COMMIT="$PREV_COMMIT"
+      COMMIT_HASH="$PREV_COMMIT_HASH"
+      COMMIT_TIME="$PREV_COMMIT_TIME"
+      PREV_COMMIT_HASH="`cat previous-commit-$$`"
 
       rm -f previous-commit-$$
 
@@ -322,7 +353,7 @@ create_build_script()
   echo "on_exit()"                    >> "$SCRIPT_FILE"
   echo "{"                            >> "$SCRIPT_FILE"
   echo "  CODE=\$?"                   >> "$SCRIPT_FILE"
-  echo "  rm -rf \"$FORENSICS_DIR/$CONFIG_DIR/.forensics-build\"" >> "$SCRIPT_FILE"
+  echo "#  rm -rf \"$FORENSICS_DIR/$CONFIG_DIR/.forensics-build\"" >> "$SCRIPT_FILE"
   echo "  mv \"\$THIS_FILE\" \"$FORENSICS_DIR/$CONFIG_DIR/.forensics-build-script-\$CODE\"" >> "$SCRIPT_FILE"
   echo "  exit \$CODE"                >> "$SCRIPT_FILE"
   echo "}"                            >> "$SCRIPT_FILE"
@@ -330,6 +361,7 @@ create_build_script()
   echo "FORENSICS_DIR=\"$FORENSICS_DIR\"" >> "$SCRIPT_FILE"
   echo "SYSTEM=\"$SYSTEM\""           >> "$SCRIPT_FILE"
   echo "COMMIT=\"$COMMIT\""           >> "$SCRIPT_FILE"
+  echo "COMMIT_HASH=\"$COMMIT_HASH\"" >> "$SCRIPT_FILE"
   echo "CONFIG=\"$CONFIG\""           >> "$SCRIPT_FILE"
   echo "COMMIT_TIME=\"$COMMIT_TIME\"" >> "$SCRIPT_FILE"
   echo "COMMIT_BRANCH=\"$COMMIT_BRANCH\"" >> "$SCRIPT_FILE"
@@ -375,6 +407,7 @@ create_run_script()
   echo "FORENSICS_DIR=\"$FORENSICS_DIR\"" >> "$SCRIPT_FILE"
   echo "SYSTEM=\"$SYSTEM\""           >> "$SCRIPT_FILE"
   echo "COMMIT=\"$COMMIT\""           >> "$SCRIPT_FILE"
+  echo "COMMIT_HASH=\"$COMMIT_HASH\"" >> "$SCRIPT_FILE"
   echo "CONFIG=\"$CONFIG\""           >> "$SCRIPT_FILE"
   echo "USAGE=\"$USAGE\""             >> "$SCRIPT_FILE"
   echo "COMMIT_TIME=\"$COMMIT_TIME\"" >> "$SCRIPT_FILE"
@@ -402,13 +435,25 @@ create_run_script()
 }
 
 
-add_build_and_run_as_needed()
+add_build_as_needed()
 {
   COMMIT_DIR="$BUILD_DIR/$COMMIT"
   CONFIG_DIR="$COMMIT_DIR/$CONFIG"
   CONFIG_BUILD_DIR="$CONFIG_DIR/.forensics-build"
 
   BUILD_SCRIPT_FILE="$BUILD_DIR/.forensics-build-temp-$$"
+
+  echo "============================================================== add_build_as_needed"
+  echo "FORENSICS_DIR=$FORENSICS_DIR"
+  echo "REPO_DIR=$REPO_DIR"
+  echo "BUILD_DIR=$BUILD_DIR"
+  echo "SYSTEM=$SYSTEM"
+  echo "CONFIG=$CONFIG"
+  echo "COMMIT=$COMMIT"
+  echo "COMMIT_HASH=$COMMIT_HASH"
+  echo "COMMIT_TIME=$COMMIT_TIME"
+  echo "COMMIT_BRANCH=$COMMIT_BRANCH"
+#  echo "CURRENT_BENCHMARKS=$CURRENT_BENCHMARKS"
 
   create_build_script "$BUILD_SCRIPT_FILE"
 
@@ -428,22 +473,41 @@ add_build_and_run_as_needed()
 
     mkdir "$CONFIG_DIR"
 
-    get_system_config
+    MAIN_BRANCHES="$MAIN_BRANCHES_COMMON"
+    source "system-configs/$SYSTEM/configs/$CONFIG"
+
     git clone "$REPO_DIR" "$CONFIG_BUILD_DIR-$$"
     mv "$CONFIG_BUILD_DIR-$$" "$CONFIG_BUILD_DIR"
-    (cd "$CONFIG_BUILD_DIR" ; git checkout "$COMMIT")
+    (cd "$CONFIG_BUILD_DIR" ; git checkout "$COMMIT_HASH")
 
     add_parallel_task "$BUILD_SCRIPT_FILE"
 
     NB_TASKS_FOR_THIS_BRANCH=$(($NB_TASKS_FOR_THIS_BRANCH + 1))
 
   fi
+}
 
-  get_common_run_setup
+
+add_run_as_needed()
+{
+  COMMIT_DIR="$BUILD_DIR/$COMMIT"
+  CONFIG_DIR="$COMMIT_DIR/$CONFIG"
+
+  echo "============================================================== add_run_as_needed"
+  echo "FORENSICS_DIR=$FORENSICS_DIR"
+  echo "BUILD_DIR=$BUILD_DIR"
+  echo "SYSTEM=$SYSTEM"
+  echo "CONFIG=$CONFIG"
+  echo "COMMIT=$COMMIT"
+  echo "COMMIT_HASH=$COMMIT_HASH"
+  echo "COMMIT_TIME=$COMMIT_TIME"
+  echo "COMMIT_BRANCH=$COMMIT_BRANCH"
+
+  source common-run-setup
 
   for USAGE in $CURRENT_USAGES ; do
 
-    get_system_usage
+    source "system-configs/$SYSTEM/usages/$USAGE"
 
     USAGE_PARENT_DIR="$CONFIG_DIR/.forensics-usage"
 
@@ -463,9 +527,12 @@ add_build_and_run_as_needed()
 
     if diff "$RUN_SCRIPT_FILE" $USAGE_DIR/.forensics-run-script-* > /dev/null 2>&1 ; then
 
+      echo "*********** same $RUN_SCRIPT_FILE $USAGE_DIR/.forensics-run-script-..."
       rm -f "$RUN_SCRIPT_FILE"
 
     else
+
+      echo "*********** different $RUN_SCRIPT_FILE $USAGE_DIR/.forensics-run-script-..."
 
       if file_exists "$USAGE_DIR" ; then
         rm -rf "$USAGE_DIR"
@@ -482,34 +549,94 @@ add_build_and_run_as_needed()
   done
 }
 
-get_system_config()
+
+add_build_and_run_as_needed()
 {
-  MAIN_BRANCHES="$INITIAL_MAIN_BRANCHES"
-  source "system-configs/$SYSTEM/configs/$CONFIG"
+    if ! add_build_as_needed ; then
+      return 1
+    fi
+
+    if ! add_run_as_needed ; then
+      return 1
+    fi
 }
 
 
-get_system_usage()
+do_builds_and_runs()
 {
-  source "system-configs/$SYSTEM/usages/$USAGE"
-}
-
-
-process_all()
-{
-  echo "... $SYSTEM: process_all"
-  echo "SYSTEM=$SYSTEM"
-  echo "GIT_REPO_URL=$GIT_REPO_URL"
-  echo "REPO_DIR=$REPO_DIR"
-  echo "BUILD_DIR=$BUILD_DIR"
+  echo "... $SYSTEM: do_builds_and_runs"
 
   for CONFIG in $CURRENT_CONFIGS ; do
 
-    get_system_config
+    MAIN_BRANCHES="$MAIN_BRANCHES_COMMON"
+    source "system-configs/$SYSTEM/configs/$CONFIG"
 
+    for_each_tagged_commit add_build_and_run_as_needed
     for_each_commit add_build_and_run_as_needed
 
   done
+}
+
+
+do_runs_only()
+{
+  echo "... $SYSTEM: do_runs_only"
+
+  for CONFIG in $CURRENT_CONFIGS ; do
+
+    MAIN_BRANCHES=""
+    source "system-configs/$SYSTEM/configs/$CONFIG"
+
+    echo "*** doing $CONFIG"
+
+    NB_TASKS_FOR_THIS_BRANCH="0"
+
+    for COMMIT in `cd $BUILD_DIR ; ls` ; do
+
+      COMMIT_HASH="$COMMIT"
+      COMMIT_TIME="unknown"
+      COMMIT_BRANCH="unknown"
+
+      add_run_as_needed
+
+    done
+
+  done
+}
+
+
+update_runs()
+{
+  BUILD_DIR="system-builds/$SYSTEM"
+
+  if ! file_exists "$BUILD_DIR" ; then
+    mkdir "$BUILD_DIR"
+  fi
+
+  LATEST_CONFIGS_PROCESSED="`cat $BUILD_DIR/.latest-configs-processed 2> /dev/null`"
+  LATEST_USAGES_PROCESSED="`cat $BUILD_DIR/.latest-usages-processed 2> /dev/null`"
+  LATEST_BENCHMARKS_PROCESSED="`cat $BUILD_DIR/.latest-benchmarks-processed 2> /dev/null`"
+
+  CURRENT_CONFIGS="`ls system-configs/$SYSTEM/configs 2> /dev/null`"
+  CURRENT_USAGES="`ls system-configs/$SYSTEM/usages 2> /dev/null`"
+
+  CURRENT_BENCHMARKS=""
+
+  for BENCHMARK_SUITE in $BENCHMARK_SUITES ; do
+    CURRENT_BENCHMARKS="$CURRENT_BENCHMARKS `cd \"$FORENSICS_DIR/benchmarks/$BENCHMARK_SUITE\" ; ./list`"
+  done
+
+  if [ "$CURRENT_CONFIGS" != "$LATEST_CONFIGS_PROCESSED" -o "$CURRENT_USAGES" != "$LATEST_USAGES_PROCESSED" -o "$CURRENT_BENCHMARKS" != "$LATEST_BENCHMARKS_PROCESSED" -o "$KIND" == "major" ] ; then
+
+    if ! do_runs_only ; then
+      return 1
+    fi
+
+    echo "$CURRENT_CONFIGS" > "$BUILD_DIR/.latest-configs-processed"
+    echo "$CURRENT_USAGES" > "$BUILD_DIR/.latest-usages-processed"
+    echo "$CURRENT_BENCHMARKS" > "$BUILD_DIR/.latest-benchmarks-processed"
+
+  fi
 }
 
 
@@ -536,41 +663,41 @@ check_for_new_commits()
 
   fi
 
-  LATEST_COMMIT_PROCESSED="`cat $BUILD_DIR/.latest-commit-processed 2> /dev/null`"
+  LATEST_COMMIT_HASH_PROCESSED="`cat $BUILD_DIR/.latest-commit-processed 2> /dev/null`"
   LATEST_CONFIGS_PROCESSED="`cat $BUILD_DIR/.latest-configs-processed 2> /dev/null`"
   LATEST_USAGES_PROCESSED="`cat $BUILD_DIR/.latest-usages-processed 2> /dev/null`"
+  LATEST_BENCHMARKS_PROCESSED="`cat $BUILD_DIR/.latest-benchmarks-processed 2> /dev/null`"
 
-  LATEST_COMMIT="`cd $REPO_DIR ; git log --all --date-order --format=format:%H -n 1`"
+  LATEST_COMMIT_HASH="`cd $REPO_DIR ; git log --all --date-order --format=format:%H -n 1`"
   CURRENT_CONFIGS="`ls system-configs/$SYSTEM/configs 2> /dev/null`"
   CURRENT_USAGES="`ls system-configs/$SYSTEM/usages 2> /dev/null`"
 
-  echo $LATEST_COMMIT
+  CURRENT_BENCHMARKS=""
+
+  for BENCHMARK_SUITE in $BENCHMARK_SUITES ; do
+    CURRENT_BENCHMARKS="$CURRENT_BENCHMARKS `cd \"$FORENSICS_DIR/benchmarks/$BENCHMARK_SUITE\" ; ./list`"
+  done
+
+  echo $LATEST_COMMIT_HASH
   echo $CURRENT_CONFIGS
   echo $CURRENT_USAGES
-  echo $LATEST_COMMIT_PROCESSED
+  echo $LATEST_COMMIT_HASH_PROCESSED
   echo $LATEST_CONFIGS_PROCESSED
   echo $LATEST_USAGES_PROCESSED
+#  echo $LATEST_BENCHMARKS_PROCESSED
 
-  if [ "$LATEST_COMMIT" != "$LATEST_COMMIT_PROCESSED" -o "$CURRENT_CONFIGS" != "$LATEST_CONFIGS_PROCESSED" -o "$CURRENT_USAGES" != "$LATEST_USAGES_PROCESSED" -o "$KIND" == "major" ] ; then
+  if [ "$LATEST_COMMIT_HASH" != "$LATEST_COMMIT_HASH_PROCESSED" -o "$CURRENT_CONFIGS" != "$LATEST_CONFIGS_PROCESSED" -o "$CURRENT_USAGES" != "$LATEST_USAGES_PROCESSED" -o "$CURRENT_BENCHMARKS" != "$LATEST_BENCHMARKS_PROCESSED" -o "$KIND" == "major" ] ; then
 
-    if ! process_all ; then
+    if ! do_builds_and_runs ; then
       return 1
     fi
 
-    echo "$LATEST_COMMIT" > "$BUILD_DIR/.latest-commit-processed"
+    echo "$LATEST_COMMIT_HASH" > "$BUILD_DIR/.latest-commit-processed"
     echo "$CURRENT_CONFIGS" > "$BUILD_DIR/.latest-configs-processed"
     echo "$CURRENT_USAGES" > "$BUILD_DIR/.latest-usages-processed"
+    echo "$CURRENT_BENCHMARKS" > "$BUILD_DIR/.latest-benchmarks-processed"
 
   fi
-}
-
-
-get_system_setup()
-{
-  GIT_REPO_URL=""
-  GIT_REPO_COMMIT_URL=""
-  AGGREGATOR_URLS=""
-  source "system-configs/$SYSTEM/setup"
 }
 
 
@@ -579,19 +706,59 @@ check_all_systems_for_new_commits()
   for sys in `cd system-configs ; ls` ; do
     SYSTEM="$sys"
     if file_exists "system-configs/$SYSTEM/setup" ; then
-      get_common_setup
-      MAIN_BRANCHES_ORIG="$MAIN_BRANCHES"
-      get_system_setup
+      DATE1="$DATE1_COMMON"
+      DATE2="$DATE2_COMMON"
+      DATE3="$DATE3_COMMON"
+      SPACING1="$SPACING1_COMMON"
+      SPACING2="$SPACING2_COMMON"
+      SPACING3="$SPACING3_COMMON"
+      MAIN_BRANCHES="$MAIN_BRANCHES_COMMON"
+      GIT_REPO_URL=""
+      GIT_REPO_COMMIT_URL=""
+      AGGREGATOR_URLS=""
+
+      source "system-configs/$SYSTEM/setup"
+
+      DATE1_TIME="`date -d\"$DATE1\" +%s`"
+      if [ "$SPACING1" == "" ] ; then
+        SPACING1_TIME="0"
+      else
+        SPACING1_TIME="`date -d\"$SPACING1\" +%s`"
+        SPACING1_TIME="$(($SPACING1_TIME - $CURRENT_TIME))"
+      fi
+
+      DATE2_TIME="`date -d\"$DATE2\" +%s`"
+      if [ "$SPACING2" == "" ] ; then
+        SPACING2_TIME="0"
+      else
+        SPACING2_TIME="`date -d\"$SPACING2\" +%s`"
+        SPACING2_TIME="$(($SPACING2_TIME - $CURRENT_TIME))"
+      fi
+
+      DATE3_TIME="`date -d\"$DATE3\" +%s`"
+      if [ "$SPACING3" == "" ] ; then
+        SPACING3_TIME="0"
+      else
+        SPACING3_TIME="`date -d\"$SPACING3\" +%s`"
+        SPACING3_TIME="$(($SPACING3_TIME - $CURRENT_TIME))"
+      fi
+
       echo "--- $SYSTEM GIT_REPO_URL=$GIT_REPO_URL"
-      if ! check_for_new_commits ; then
-        return 1
+
+      if [ "$GIT_REPO_URL" == "" ] ; then
+        if ! update_runs ; then
+          return 1
+        fi
+      else
+        if ! check_for_new_commits ; then
+          return 1
+        fi
       fi
     else
       echo "*** file system-configs/$SYSTEM/setup is missing"
     fi
   done
 }
-
 
 perform_task()
 {
@@ -621,8 +788,11 @@ perform_task()
 }
 
 
-get_common_setup()
+periodic_task()
 {
+  # temporary hack
+  ( cd benchmarks/python-benchmarks ; ./update )
+
   PATH="$INITIAL_PATH"
   MAIN_BRANCHES="master main"
 
@@ -635,57 +805,22 @@ get_common_setup()
   DATE3="1970-01-01"
   SPACING3=""
 
-  MAJOR_TASK_PERIOD="1 hours"  # default is 1 hour between major tasks
+  MAJOR_TASK_PERIOD="15 minutes"  # default is 15 minutes between major tasks
 
   source common-setup
 
   CURRENT_TIME="`date +%s`"
 
-  DATE1_TIME="`date -d\"$DATE1\" +%s`"
-  if [ "$SPACING1" == "" ] ; then
-    SPACING1_TIME="0"
-  else
-    SPACING1_TIME="`date -d\"$SPACING1\" +%s`"
-    SPACING1_TIME="$(($SPACING1_TIME - $CURRENT_TIME))"
-  fi
+  DATE1_COMMON="$DATE1"
+  DATE2_COMMON="$DATE2"
+  DATE3_COMMON="$DATE3"
+  SPACING1_COMMON="$SPACING1"
+  SPACING2_COMMON="$SPACING2"
+  SPACING3_COMMON="$SPACING3"
 
-  DATE2_TIME="`date -d\"$DATE2\" +%s`"
-  if [ "$SPACING2" == "" ] ; then
-    SPACING2_TIME="0"
-  else
-    SPACING2_TIME="`date -d\"$SPACING2\" +%s`"
-    SPACING2_TIME="$(($SPACING2_TIME - $CURRENT_TIME))"
-  fi
-
-  DATE3_TIME="`date -d\"$DATE3\" +%s`"
-  if [ "$SPACING3" == "" ] ; then
-    SPACING3_TIME="0"
-  else
-    SPACING3_TIME="`date -d\"$SPACING3\" +%s`"
-    SPACING3_TIME="$(($SPACING3_TIME - $CURRENT_TIME))"
-  fi
+  MAIN_BRANCHES_COMMON="$MAIN_BRANCHES"
 
   MAJOR_TASK_PERIOD_TIME="`date -d\"-$MAJOR_TASK_PERIOD\" +%s`"
-
-  INITIAL_MAIN_BRANCHES="$MAIN_BRANCHES"
-}
-
-
-get_common_build_setup()
-{
-  source common-build-setup
-}
-
-
-get_common_run_setup()
-{
-  source common-run-setup
-}
-
-
-periodic_task()
-{
-  get_common_setup
 
   if file_exists "latest-major-periodic-task" ; then
     LATEST_MAJOR="`cat latest-major-periodic-task`"

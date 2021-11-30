@@ -12,12 +12,30 @@ echo "running report-all-results... KIND=$KIND"
 
 source common-setup
 
-rm -f "$FORENSICS_DIR/forensics.db"
+PYTHON3=$FORENSICS_DIR/compilers/venv/bin/python3
 
-$FORENSICS_DIR/compilers/venv/bin/python3 -m forensics.collector --conf "$FORENSICS_DIR/forensics.conf" --init
+#---------------------------------------------------------
 
-time $FORENSICS_DIR/compilers/venv/bin/python3 -m forensics.collector --conf "$FORENSICS_DIR/forensics.conf" --batch-all "$FORENSICS_DIR/system-builds"
+rm -f "$FORENSICS_DIR/python-forensics.db"
 
-ls -l "$FORENSICS_DIR/forensics.db"
+$PYTHON3 -m forensics.collector --conf "$FORENSICS_DIR/python-forensics.conf" --init
 
-scp -P 443 forensics.db "feeley@gambitscheme.org:/usr/local/var/www/zipi-forensics/results/`hostname`.db"
+time $PYTHON3 -m forensics.collector --conf "$FORENSICS_DIR/python-forensics.conf" --batch "$FORENSICS_DIR/system-builds/zipi" "$FORENSICS_DIR/system-builds/cpython" "$FORENSICS_DIR/system-builds/pypy3" "$FORENSICS_DIR/system-builds/pypy2"
+
+ls -l "$FORENSICS_DIR/python-forensics.db"
+
+scp python-forensics.db "forensics@gambitscheme.org:/Users/forensics/forensics-databases/python/`hostname`.db"
+
+#---------------------------------------------------------
+
+rm -f "$FORENSICS_DIR/scheme-forensics.db"
+
+$PYTHON3 -m forensics.collector --conf "$FORENSICS_DIR/scheme-forensics.conf" --init
+
+time $PYTHON3 -m forensics.collector --conf "$FORENSICS_DIR/scheme-forensics.conf" --batch "$FORENSICS_DIR/system-builds/gambit"
+
+ls -l "$FORENSICS_DIR/scheme-forensics.db"
+
+scp scheme-forensics.db "forensics@gambitscheme.org:/Users/forensics/forensics-databases/scheme/`hostname`.db"
+
+#---------------------------------------------------------
