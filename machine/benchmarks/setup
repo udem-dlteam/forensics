@@ -1,0 +1,16 @@
+#! /bin/bash
+
+# File: "setup"
+
+# Usage: ./setup
+
+# This script does the setup of the benchmark suites.
+
+
+SCHEME_BENCHMARKS_DIR="`pwd`/scheme-benchmarks"
+
+if ! test -e "$SCHEME_BENCHMARKS_DIR" ; then
+  git clone git@github.com:udem-dlteam/scheme-benchmarks
+  cd scheme-benchmarks
+  ./configure
+fi
