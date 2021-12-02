@@ -1,0 +1,131 @@
+<!doctype html>
+<html class="no-js" lang="">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title>Gambit Forensics</title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <link rel="stylesheet" href="main.css" type="text/css" media="screen" />
+
+        <script src="d3_7.js"></script>
+        <script src="FileSaver.min.js"></script>
+    </head>
+    <body>
+        <!--[if lt IE 8]>
+            <p class="browserupgrade">
+            You are using an <strong>outdated</strong> browser. Please
+            <a href="http://browsehappy.com/">upgrade your browser</a> to improve
+            your experience.
+            </p>
+        <![endif]-->
+
+        <div id="app">
+            <div id="header">
+                <h1>Gambit Forensics</h1>
+            </div>
+            <div id="contents">
+                <div id="options">
+                    <h2>Options</h2>
+                    <div id="options-list">
+                        <div>
+                            <button id="export-svg">Export SVG</button>
+                        </div>
+                        <div id="presets">
+                            <h3>Presets</h3>
+                            <select id="presets-list" name="presets">
+                            </select>
+                        </div>
+                        <div id="plot-title-div">
+                            <h3>Plot title</h3>
+                            <input id="plot-title" type="text" name="plot-title"/>
+                        </div>
+                        <div id="systems">
+                            <h3>Systems</h3>
+                            <select id="systems-list" name="systems">
+                            </select>
+                        </div>
+                        <div id="benchmarks">
+                            <h3>Benchmarks</h3>
+                            <select id="benchmarks-list" name="benchmarks" multiple>
+                            </select>
+                        </div>
+                        <div id="commits">
+                            <h3>Commits</h3>
+                            <select id="commits-list" name="commits" multiple>
+                            </select>
+                        </div>
+                        <div id="configs">
+                            <h3>Configs</h3>
+                            <select id="configs-list" name="configs">
+                            </select>
+                        </div>
+                        <div id="plot-type">
+                            <h3>Plot type</h3>
+                            <select id="plot-type-list" name="plot-type">
+                                <option value="line">Line plot</option>
+                                <option value="bar">Bar chart</option>
+                            </select>
+                        </div>
+                        <div id="x-axis">
+                            <h3>X axis</h3>
+                            <select id="x-axis-list" name="x-axis">
+                                <option value="commit">Commit</option>
+                                <option value="benchmark">Benchmark</option>
+                            </select>
+                        </div>
+                        <div id="sort-type">
+                            <h3>Sort type</h3>
+                            <select id="sort-type-list" name="sort-type">
+                                <option value="commit-timestamp-asc">Commit (timestamp, asc)</option>
+                                <option value="commit-timestamp-desc">Commit (timestamp, desc)</option>
+                                <option value="value-asc">Value (asc)</option>
+                                <option value="value-desc">Value (desc)</option>
+                                <option value="benchmark-asc">Benchmark (alphabetical, asc)</option>
+                                <option value="benchmark-desc">Benchmark (alphabetical, desc)</option>
+                            </select>
+                        </div>
+                        <div id="normalization-type">
+                            <h3>Normalization type</h3>
+                            <select id="normalization-type-list" name="normalization-type">
+                                <option value="relative">Relative</option>
+                                <option value="percentage">Percentage</option>
+                            </select>
+                        </div>
+                        <div id="y-axis-scale">
+                            <h3>Y axis scale</h3>
+                            <select id="y-axis-scale-list" name="y-axis-scale">
+                                <option value="auto">Auto</option>
+                                <option value="linear">Linear</option>
+                                <option value="log">Log</option>
+                            </select>
+                        </div>
+                        <div id="other">
+                            <h3>Other</h3>
+                            <input type="checkbox" id="sticky-zero-cb" name="sticky-zero" checked>
+                            <label for="sticky-zero">Sticky zero</label>
+                            <br />
+                            <input type="checkbox" id="geometric-mean-cb" name="geometric-mean" checked>
+                            <label for="geometric-mean">Geometric mean</label>
+                        </div>
+                    </div>
+                </div>
+                <div id="plot">
+                    <h2>Plot</h2>
+                    <div id="chart">
+                        <h4 id="plot-title-text">Plot title</h4>
+                        <h5 id="plot-subtitle-text"></h5>
+                    </div>
+                </div>
+            </div>
+            <div id="footer">
+                <a href="https://github.com/udem-dlteam/forensics">github.com/udem-dlteam/forensics</a>
+            </div>
+        </div>
+        <script src="presets.js" type="text/javascript"></script>
+        <script src="drawLine.js" type="text/javascript"></script>
+        <script src="drawBar.js" type="text/javascript"></script>
+        <script src="main.js" type="text/javascript"></script>
+    </body>
+</html>

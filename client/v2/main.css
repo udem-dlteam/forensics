@@ -1,0 +1,144 @@
+/* General UI styling */
+html, body {
+  height: 100%;
+}
+
+body {
+  overflow: hidden;
+}
+
+#app {
+  height: 100%;
+}
+
+#header, #footer {
+  height: 5%;
+}
+
+#contents {
+  height: 90%;
+}
+
+#options {
+  float: left;
+  height: 85%;
+  width: 15%;
+  display: inline-block;
+}
+
+#options-list {
+  height: 100%;
+  overflow: auto;
+}
+
+#plot {
+  float: right;
+  height: 85%;
+  width: 85%;
+  display: inline-block;
+}
+
+#presets-list, #systems-list, #benchmarks-list,
+#commits-list, #configs-list {
+  overflow: auto;
+}
+
+#chart {
+  height: 100%;
+  width: 100%;
+}
+
+select {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+
+#chart > div {
+  height: 100%;
+  width: 100%;
+}
+
+.parent {
+  display: grid;
+  grid-template: auto 1fr auto / auto 1fr auto;
+}
+
+header {
+  padding: .2rem;
+  grid-column: 1 / 4;
+}
+
+.left-side {
+  grid-column: 1 / 2;
+  overflow: auto;
+}
+
+main {
+  grid-column: 2 / 3;
+  overflow: auto;
+}
+
+.right-side {
+  grid-column: 3 / 4;
+}
+
+footer {
+  grid-column: 1 / 4;
+}
+
+#chart {
+  width: 100%;
+  height: 100%;
+}
+
+#chart > svg {
+  width: 100%;
+  height: 100%;
+}
+
+#plot-title-div {
+  width: 100%;
+}
+
+#chart > h4 {
+  margin: 0;
+  text-align: center;
+}
+#chart > h5 {
+  margin: 0;
+  text-align: center;
+}
+
+/* Chart styling */
+.line {
+  fill: none;
+  stroke-width: 2;
+}
+
+.tick > line {
+  stroke-dasharray: 5, 5;
+  opacity: 0.5;
+}
+
+.reference {
+  fill: black;
+}
+
+.dot {
+  r: 3;
+}
+
+div.tooltip {
+  position: absolute;
+  text-align: left;
+  padding: 2px;
+  background: lightgray;
+  border: 1px;
+  border-style: solid;
+  pointer-events: none;
+}
+
+.bar:hover {
+  fill: lightgray;
+}
