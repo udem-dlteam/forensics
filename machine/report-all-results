@@ -20,6 +20,4 @@ time $FORENSICS_DIR/compilers/venv/bin/python3 -m forensics.collector --conf "$F
 
 ls -l "$FORENSICS_DIR/forensics.db"
 
-$FORENSICS_DIR/compilers/venv/bin/python3 -m forensics.collector.export_json --conf "$FORENSICS_DIR/forensics.conf"
-
-scp -P 443 forensics.json "feeley@gambitscheme.org:/usr/local/var/websites/forensics.gambitscheme.org/forensics.json"
+scp -P 443 forensics.db "feeley@gambitscheme.org:/usr/local/var/www/zipi-forensics/results/`hostname`.db"
