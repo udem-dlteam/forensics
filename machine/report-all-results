@@ -36,6 +36,8 @@ time $PYTHON3 -m forensics.collector --conf "$FORENSICS_DIR/scheme-forensics.con
 
 ls -l "$FORENSICS_DIR/scheme-forensics.db"
 
-scp scheme-forensics.db "forensics@gambitscheme.org:/Users/forensics/forensics-databases/scheme/`hostname`.db"
+$FORENSICS_DIR/compilers/venv/bin/python3 -m forensics.collector.export_json --conf "$FORENSICS_DIR/scheme-forensics.conf"
+
+scp scheme-forensics.json "forensics@gambitscheme.org:/usr/local/var/websites/forensics.gambitscheme.org/forensics.json"
 
 #---------------------------------------------------------
