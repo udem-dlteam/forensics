@@ -791,7 +791,12 @@ perform_task()
 periodic_task()
 {
   # temporary hack
-  ( cd benchmarks/python-benchmarks ; ./update )
+  if test -e benchmarks/python-benchmarks; then
+    ( cd benchmarks/python-benchmarks ; ./update )
+  fi
+  if test -e benchmarks/scheme-benchmarks; then
+    ( cd benchmarks/scheme-benchmarks ; ./update )
+  fi
 
   PATH="$INITIAL_PATH"
   MAIN_BRANCHES="master main"

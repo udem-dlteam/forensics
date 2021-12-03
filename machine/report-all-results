@@ -16,28 +16,34 @@ PYTHON3=$FORENSICS_DIR/compilers/venv/bin/python3
 
 #---------------------------------------------------------
 
-rm -f "$FORENSICS_DIR/python-forensics.db"
+if test -e "$FORENSICS_DIR/python-forensics.conf"; then
 
-$PYTHON3 -m forensics.collector --conf "$FORENSICS_DIR/python-forensics.conf" --init
+  rm -f "$FORENSICS_DIR/python-forensics.db"
 
-time $PYTHON3 -m forensics.collector --conf "$FORENSICS_DIR/python-forensics.conf" --batch "$FORENSICS_DIR/system-builds/zipi" "$FORENSICS_DIR/system-builds/cpython" "$FORENSICS_DIR/system-builds/pypy3" "$FORENSICS_DIR/system-builds/pypy2"
+  $PYTHON3 -m forensics.collector --conf "$FORENSICS_DIR/python-forensics.conf" --init
 
-ls -l "$FORENSICS_DIR/python-forensics.db"
+  $PYTHON3 -m forensics.collector --conf "$FORENSICS_DIR/python-forensics.conf" --batch "$FORENSICS_DIR/system-builds/zipi" "$FORENSICS_DIR/system-builds/cpython" "$FORENSICS_DIR/system-builds/pypy3" "$FORENSICS_DIR/system-builds/pypy2"
 
-scp python-forensics.db "forensics@gambitscheme.org:/Users/forensics/forensics-databases/python/`hostname`.db"
+  $PYTHON3 -m forensics.collector.export_json --conf "$FORENSICS_DIR/python-forensics.conf"
+  ls -l "$FORENSICS_DIR/python-forensics.json"
+  scp python-forensics.json "forensics@gambitscheme.org:/usr/local/var/websites/forensics.gambitscheme.org/forensics.json"
+
+fi
 
 #---------------------------------------------------------
 
-rm -f "$FORENSICS_DIR/scheme-forensics.db"
+if test -e "$FORENSICS_DIR/scheme-forensics.conf"; then
 
-$PYTHON3 -m forensics.collector --conf "$FORENSICS_DIR/scheme-forensics.conf" --init
+  rm -f "$FORENSICS_DIR/scheme-forensics.db"
 
-time $PYTHON3 -m forensics.collector --conf "$FORENSICS_DIR/scheme-forensics.conf" --batch "$FORENSICS_DIR/system-builds/gambit"
+  $PYTHON3 -m forensics.collector --conf "$FORENSICS_DIR/scheme-forensics.conf" --init
 
-ls -l "$FORENSICS_DIR/scheme-forensics.db"
+  $PYTHON3 -m forensics.collector --conf "$FORENSICS_DIR/scheme-forensics.conf" --batch "$FORENSICS_DIR/system-builds/gambit"
 
-$FORENSICS_DIR/compilers/venv/bin/python3 -m forensics.collector.export_json --conf "$FORENSICS_DIR/scheme-forensics.conf"
+  $PYTHON3 -m forensics.collector.export_json --conf "$FORENSICS_DIR/scheme-forensics.conf"
+  ls -l "$FORENSICS_DIR/scheme-forensics.json"
+  scp scheme-forensics.json "forensics@gambitscheme.org:/usr/local/var/websites/forensics.gambitscheme.org/forensics.json"
 
-scp scheme-forensics.json "forensics@gambitscheme.org:/usr/local/var/websites/forensics.gambitscheme.org/forensics.json"
+fi
 
 #---------------------------------------------------------
