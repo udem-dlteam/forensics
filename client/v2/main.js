@@ -427,4 +427,4 @@ function plotStateFromURL() {
   updatePlotState();
 }
 
-init('/forensics.json');
+init('/results/forensics.json');

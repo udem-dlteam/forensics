@@ -42,7 +42,7 @@ if test -e "$FORENSICS_DIR/scheme-forensics.conf"; then
 
   $PYTHON3 -m forensics.collector.export_json --conf "$FORENSICS_DIR/scheme-forensics.conf"
   ls -l "$FORENSICS_DIR/scheme-forensics.json"
-  scp scheme-forensics.json "forensics@gambitscheme.org:/usr/local/var/websites/forensics.gambitscheme.org/forensics.json"
+  scp scheme-forensics.json "forensics@gambitscheme.org:/usr/local/var/websites/forensics.gambitscheme.org/results/forensics.json"
 
 fi
 
