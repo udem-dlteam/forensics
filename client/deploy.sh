@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-now=$(date +"%m_%d_%Y")
+now=$(date +"%m_%d_%Y_%s")
 base="/usr/local/var/websites"
 forensics="${base}/forensics.gambitscheme.org"
 
