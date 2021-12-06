@@ -62,7 +62,6 @@ function exportSVG(path){
 };
 
 function setPlotTitle(title) {
-  plotTitleInput.value = title;
   plotTitleText.innerHTML = title;
 }
 
@@ -286,10 +285,21 @@ function updatePlotState() {
   plotState.yAxisScale = yAxisScaleSelect.value;
 
   // Set the plot title if it is set
-  if (plotState.title === "") {
-    setPlotTitle(`${plotState.ordinal} value by ${plotState.xAxis}`);
+  if (plotTitleInput.value === "") {
+    var _title = (() => {
+      var len = plotState.benchmarks.length;
+      if (len > 8) {
+        return `${plotState.benchmarks.splice(0, 8).join(',')}, ...`;
+      } else {
+        return `${plotState.benchmarks.join(',')}`;
+      }
+    })();
+
+    console.log(_title);
+
+    setPlotTitle(_title);
   } else {
-    setPlotTitle(plotState.title)
+    setPlotTitle(plotTitleInput.value);
   }
 
   // Set the plot subtitle
@@ -410,7 +420,11 @@ function plotStateFromURL() {
   plotTypeSelect.value = params.get("plotType");
   xAxisSelect.value = params.get("xAxis");
   sortTypeSelect.value = params.get("sortType");
-  plotTitleInput.value = params.get("title");
+  if (params.get("title") === "undefined") {
+    plotTitleInput.value = "";
+  } else {
+    plotTitleInput.value = params.get("title");
+  }
   normalizationTypeSelect.value = params.get("normalizationType");
 
   // Serialisation produces a string, which is truthy
