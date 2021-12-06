@@ -74,7 +74,7 @@ function drawLine() {
      .selectAll("text")
      .style("text-anchor", "start")
      .style("font-size", () => {
-       var len = ys.length;
+       var len = ys[0].length;
        if (len > 40) {
          var s = width / ys.length;
          if (s > 2) {
@@ -99,47 +99,57 @@ function drawLine() {
                  .attr("text-anchor", "start")
                  .text("Run time (s)"));
 
-  lines.forEach((_line, line_index) => {
-    svg.append("path")
-       .data([_line.values])
-       .attr("class", "line")
-       .style("stroke", zScale(line_index))
-       .attr("d", line);
+  // Add the lines
+  svg.selectAll("lines")
+     .data(lines)
+     .enter()
+     .append("path")
+     .attr("class", "line")
+     .style("stroke", (l, i) => zScale(i))
+     .attr("d", l => line(l.values))
 
-    // Add the scatterplot
-    // TODO: Make dots invisible for tooltip
-    svg.selectAll("dot")
-       .data(_line.values)
-       .enter()
-       .append("circle")
-       .attr("class", "dot")
-       .attr("cx", (d, i) => xScale(i))
-       .attr("cy", d => yScale(d.value))
-    // Tooltip contents
-      .on("mouseover", (event, i) => {
-        tooltip.transition()
-               .duration(200)
-               .style("opacity", .9);
-        tooltip.html(`Benchmark: ${i.benchmark}<br /><br />Commit: ${i.commit}<br /><br />Value: ${i.value}`)
-               .style("left", (event.pageX) + "px")
-               .style("top", (event.pageY - 28) + "px");
-      })
-      .on("mouseout", d => {
-        tooltip.transition()
-               .duration(500)
-               .style("opacity", 0);
-      })
-      .on("click", (event, i) => {
-        ref = i.commit;
-        // Either clear or set the reference commit
-        if (plotState.reference === ref) {
-          unsetReference();
-        } else {
-          setReference(ref);
-        }
-        updatePlotState();
-      });
-  });
+  // Add the dots
+  svg.selectAll("dots")
+     .data(lines)
+     .enter()
+     .append("g")
+     .selectAll("dot")
+     .data(l => l.values)
+     .enter()
+     .append("circle")
+     .attr("class", d => {
+       if (d.value !== 0) {
+         return "dot";
+       } else {
+         // Hide null values
+         return "hidden";
+       }
+     })
+     .attr("cx", (d, i) => xScale(i))
+     .attr("cy", d => yScale(d.value))
+     .on("mouseover", (event, i) => {
+       tooltip.transition()
+              .duration(200)
+              .style("opacity", .9);
+       tooltip.html(`Benchmark: ${i.benchmark}<br /><br />Commit: ${i.commit}<br /><br />Value: ${i.value}`)
+              .style("left", (event.pageX) + "px")
+              .style("top", (event.pageY - 28) + "px");
+     })
+     .on("mouseout", d => {
+       tooltip.transition()
+              .duration(500)
+              .style("opacity", 0);
+     })
+     .on("click", (event, i) => {
+       ref = i.commit;
+       // Either clear or set the reference commit
+       if (plotState.reference === ref) {
+         unsetReference();
+       } else {
+         setReference(ref);
+       }
+       updatePlotState();
+     });
 
   // Legend
   svg.selectAll("legendMarks")
