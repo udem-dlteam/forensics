@@ -102,7 +102,13 @@ function drawLine() {
                  .attr("y", -margin.top / 2)
                  .attr("fill", "currentColor")
                  .attr("text-anchor", "start")
-                 .text("Run time (s)"));
+                 .text(() => {
+                   if (plotState.reference) {
+                     return "Run time ratio (s)";
+                   } else {
+                     return "Run time (s)";
+                   }
+                 }));
 
   // Add the lines
   svg.selectAll("lines")
