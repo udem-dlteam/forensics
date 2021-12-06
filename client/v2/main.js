@@ -382,11 +382,11 @@ function plotStateToURL() {
   const _plotState = (({
     system, benchmarks, commits, config,
     plotType, sortType, xAxis, title, reference,
-    normalizationType, stickyZero, subtitle
+    normalizationType, stickyZero, subtitle, geometricMean
   }) => ({
     system, benchmarks, commits, config,
     plotType, sortType, xAxis, title, reference,
-    normalizationType, stickyZero, subtitle
+    normalizationType, stickyZero, subtitle, geometricMean
   }))(plotState);
 
   const url = new URLSearchParams(_plotState).toString();
@@ -418,6 +418,12 @@ function plotStateFromURL() {
     stickyZeroCheckbox.checked = true;
   } else {
     stickyZeroCheckbox.checked = false;
+  }
+
+  if (params.get("geometricMean") === "true") {
+    geometricMeanCheckbox.checked = true;
+  } else {
+    geometricMeanCheckbox.checked = false;
   }
 
   plotState.reference = params.get("reference");
