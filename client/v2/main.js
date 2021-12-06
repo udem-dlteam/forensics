@@ -314,7 +314,7 @@ function gmean(a) {
  */
 const margin = {
   top: 20,
-  right: 250, // Make space for legend
+  right: 170, // Make space for legend
   bottom: 170, // Make space for long tick labels
   left: 40
 };

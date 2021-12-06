@@ -8,28 +8,33 @@ function drawLine() {
   const ys = data.map(o => o.value);
   const zs = d3.map(data, o => o[plotState.ordinal]);
 
-  // Mean, median, stddev
-  var _ys = ys.filter(o => o.value !== 0);
-  var mean = d3.mean(_ys);
-  var median = d3.median(_ys);
-  var stddev = d3.deviation(_ys);
-
-  // Remove negative mean - stddev value
-  if ((mean - stddev) < 0) {
-    var stats = [mean, median, mean + stddev];
-    var statsLabels = [`mean (${mean.toFixed(2)})`,
-                       `median (${median.toFixed(2)})`,
-                       `stddev+ (${(mean + stddev).toFixed(2)})`]
-  } else {
-    stats = [mean, median, mean-stddev, mean+stddev];
-    var statsLabels = [`mean (${mean.toFixed(2)})`,
-                       `median (${median.toFixed(2)})`,
-                       `stddev- (${(mean - stddev).toFixed(2)})`,
-                       `stddev+ (${(mean + stddev).toFixed(2)})`]
-  }
-
   lines = Array.from(d3.group(data, d => d[plotState.ordinal]),
                      ([ordinal, values]) => ({ordinal, values}));
+
+  // Break each line into segments, keeping proper indices
+  // in order to properly color and identify each segment
+  lines.forEach((line, line_idx) => {
+    var between_segments = false;
+    var segments = [{color: line_idx, values: []}];
+    var segment_idx = 0;
+    line.values.forEach((obj, value_idx) => {
+      var val = obj.value;
+      // Null values are segment delimiters
+      if (val === 0) {
+        // Increase segment count if not already in a segment
+        if (!between_segments) {
+          segment_idx++;
+          segments.push({color: line_idx, values: []});
+        }
+        between_segments = true;
+        return;
+      } else {
+        between_segments = false;
+      }
+      segments[segment_idx].values.push({y: val, x: value_idx})
+    });
+    line.segments = segments;
+  });
 
   // NOTE: We assume all series are of the same length.
   const xData = lines[0].values.map(o => o[plotState.xAxis]);
@@ -63,8 +68,8 @@ function drawLine() {
                   .style("opacity", 0);
 
   var line = d3.line()
-               .x((d, i) => xScale(i))
-               .y(d => yScale(d.value));
+               .x(d => xScale(d.x))
+               .y(d => yScale(d.y));
 
   // Generate the plot
   svg.append("g")
@@ -103,10 +108,16 @@ function drawLine() {
   svg.selectAll("lines")
      .data(lines)
      .enter()
+     .append("g")
+     .selectAll("segments")
+     .data(l => l.segments)
+     .enter()
      .append("path")
      .attr("class", "line")
-     .style("stroke", (l, i) => zScale(i))
-     .attr("d", l => line(l.values))
+     .style("stroke", d => {
+       return zScale(d.color);
+     })
+     .attr("d", d => line(d.values))
 
   // Add the dots
   svg.selectAll("dots")
@@ -156,7 +167,7 @@ function drawLine() {
      .data(lines)
      .enter()
      .append("rect")
-     .attr("x", width + 85)
+     .attr("x", width + 10)
      .attr("y", (d, i) => margin.top + i * 25)
      .attr("width", 10)
      .attr("height", 10)
@@ -166,20 +177,11 @@ function drawLine() {
      .data(lines)
      .enter()
      .append("text")
-     .attr("x", width + 100)
+     .attr("x", width + 25)
      .attr("y", (d, i) => margin.top + i * 25 + 5)
      .style("fill", "currentColor")
      .text(d => d.ordinal)
      .attr("text-anchor", "left")
      .style("alignment-baseline", "middle")
 
-  // Right y axis for statistics
-  const statsAxis = d3.axisRight(yScale).ticks(stats.length);
-  svg.append("g")
-     .attr("transform", `translate(${width},0)`)
-     .call(statsAxis
-           .tickSize(10)
-           .tickValues(stats)
-           .tickFormat((d, i) => statsLabels[i]))
-     .call(g => g.select(".domain").remove());
 }
