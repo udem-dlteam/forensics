@@ -129,6 +129,12 @@ footer {
   fill: black;
 }
 
+.reference-line {
+  stroke: black;
+  stroke-width: 1;
+  opacity: 1;
+}
+
 .dot {
   r: 3px;
 }

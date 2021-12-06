@@ -110,6 +110,16 @@ function drawLine() {
                    }
                  }));
 
+  // Add identification line for 1.0 when normalized
+  if (plotState.reference) {
+    svg.append("line")
+       .attr("class", "reference-line")
+       .attr("x1", 0)
+       .attr("y1", yScale(1))
+       .attr("x2", width)
+       .attr("y2", yScale(1))
+  }
+
   // Add the lines
   svg.selectAll("lines")
      .data(lines)

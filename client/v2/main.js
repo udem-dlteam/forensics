@@ -295,8 +295,6 @@ function updatePlotState() {
       }
     })();
 
-    console.log(_title);
-
     setPlotTitle(_title);
   } else {
     setPlotTitle(plotTitleInput.value);
