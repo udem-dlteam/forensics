@@ -122,7 +122,7 @@ function drawLine() {
                  .attr("text-anchor", "start")
                  .text(() => {
                    if (plotState.reference) {
-                     return "Run time ratio (s)";
+                     return "Run time ratio";
                    } else {
                      return "Run time (s)";
                    }
