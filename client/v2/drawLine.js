@@ -110,14 +110,14 @@ function drawLine() {
      .attr("dx", ".8em")
      .attr("dy", "-5px")
      .attr("transform", "rotate(90)")
-     .style("fill", d => {
+     .attr("class", d => {
        var commit = plotState.commits[d];
 
        if (plotState.reference) {
          if (commit === plotState.reference) {
-           return zScale(0);
+           return "reference-tick";
          } else {
-           return "currentColor";
+           return "";
          }
        }
      })

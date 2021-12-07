@@ -130,9 +130,14 @@ footer {
 }
 
 .reference-line {
-  stroke: black;
   stroke-width: 1;
   opacity: 1;
+  stroke: maroon;
+}
+
+.reference-tick {
+  font-weight: bolder;
+  fill: maroon;
 }
 
 .dot {
