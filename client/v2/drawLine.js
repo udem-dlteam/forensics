@@ -5,7 +5,7 @@ function drawLine() {
   const colors = d3.schemeCategory10;
   const zScale = d3.scaleOrdinal(colors);
 
-  const ys = data.map(o => o.value);
+  const ys = data.map(o => o.mean);
   const zs = d3.map(data, o => o[plotState.ordinal]);
 
   lines = Array.from(d3.group(data, d => d[plotState.ordinal]),
@@ -18,7 +18,7 @@ function drawLine() {
     var segments = [{color: line_idx, values: []}];
     var segment_idx = 0;
     line.values.forEach((obj, value_idx) => {
-      var val = obj.value;
+      var val = obj.mean;
       // Null values are segment delimiters
       if (val === 0) {
         // Increase segment count if not already in a segment
@@ -62,6 +62,7 @@ function drawLine() {
     var yMax = d3.max(ys);
   } else {
     yMin = 0.85 * d3.min(ys, d => d || Infinity);
+    yMax = d3.max(ys);
   }
 
   // Create the scale
@@ -144,7 +145,7 @@ function drawLine() {
                  .attr("text-anchor", "start")
                  .text(() => {
                    if (plotState.reference) {
-                     return "Run time ratio";
+                     return "Mean run time ratio";
                    } else {
                      return "Run time (s)";
                    }
@@ -188,6 +189,21 @@ function drawLine() {
      })
      .attr("d", d => line(d.values))
 
+  // Add error lines
+  svg.selectAll("error-lines")
+     .data(lines)
+     .enter()
+     .append("g")
+     .selectAll("error-line")
+     .data(l => l.values)
+     .enter()
+     .append("line")
+     .attr("class", "error-line")
+     .attr("x1", (d, i) => xScale(i))
+     .attr("y1", d => yScale(d.min))
+     .attr("x2", (d, i) => xScale(i))
+     .attr("y2", d => yScale(d.max));
+
   // Add the dots
   svg.selectAll("dots")
      .data(lines)
@@ -198,7 +214,7 @@ function drawLine() {
      .enter()
      .append("circle")
      .attr("class", d => {
-       if (d.value !== 0) {
+       if (d.mean !== 0) {
          return "dot";
        } else {
          // Hide null values
@@ -206,12 +222,12 @@ function drawLine() {
        }
      })
      .attr("cx", (d, i) => xScale(i))
-     .attr("cy", d => yScale(d.value))
+     .attr("cy", d => yScale(d.mean))
      .on("mouseover", (event, i) => {
        tooltip.transition()
               .duration(200)
               .style("opacity", .9);
-       tooltip.html(`Benchmark: ${i.benchmark}<br /><br />Commit: ${i.commit}<br /><br />Value: ${i.value}`)
+       tooltip.html(`Benchmark: ${i.benchmark}<br /><br />Commit: ${i.commit}<br /><br />Min: ${i.min.toFixed(2)}<br />Max: ${i.max.toFixed(2)}<br />Mean: ${i.mean.toFixed(2)}<br />Stddev: ${i.stddev.toFixed(2)}<br />Median: ${i.median.toFixed(2)}`)
               .style("left", (event.pageX) + "px")
               .style("top", (event.pageY - 28) + "px");
      })

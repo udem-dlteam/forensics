@@ -145,6 +145,11 @@ footer {
   stroke: maroon;
 }
 
+.error-line {
+  stroke: black;
+  stroke-width: 1;
+}
+
 .dot {
   r: 3px;
   cursor: pointer;

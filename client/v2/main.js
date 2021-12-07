@@ -181,10 +181,10 @@ function updatePlotState() {
       return (a, b) => b.timestamp - a.timestamp;
     }
     if (st === "value-asc") {
-      return (a, b) => a.value - b.value;
+      return (a, b) => a.mean - b.mean;
     }
     if (st === "value-desc") {
-      return (a, b) => b.value - a.value;
+      return (a, b) => b.mean - a.mean;
     }
     if (st === "benchmark-asc") {
       return (a, b) => a.benchmark.localeCompare(b.benchmark);
@@ -211,22 +211,32 @@ function updatePlotState() {
   // Inefficient. Change the underlying data structure for
   // faster access or maybe binary search over sorted timestamps
   function normalize(data, ref) {
-    function getReferenceValue(ref, bench) {
-      return forensicsData.results.filter(o => {
+    function getReferenceValues(ref, bench) {
+      var obj = forensicsData.results.filter(o => {
         return (o.benchmark === bench) && (o.commit === ref);
-      })[0].value;
+      })[0];
+
+      return [obj.min, obj.max, obj.mean, obj.stddev, obj.median];
     }
+
     plotState.benchmarks.forEach(bench => {
       // Value to normalize to
-      var norm = getReferenceValue(ref, bench);
-      if (norm === 0) {
+      var min, max, mean, stddev, median;
+      [min, max, mean, stddev, median] = getReferenceValue(ref, bench);
+
+      if (mean === 0) {
         unsetReference();
         return updatePlotState();
       }
+
       // Mutate in a single pass
       plotState.data.forEach(o => {
         if (o.benchmark === bench) {
-          o.value = o.value / norm;
+          o.min = o.min / min;
+          o.max = o.max / max;
+          o.mean = o.mean / mean;
+          o.stddev = o.stddev / stddev;
+          o.median = o.median / median;
         }
       })
     })
@@ -241,43 +251,94 @@ function updatePlotState() {
   if (plotState.geometricMean) {
     // Construct a new data array containing only the geometric mean
     var _data = [];
-    var ref_gmean = 1;
+
+    var min_gmean = 1;
+    var max_gmean = 1;
+    var mean_gmean = 1;
+    var stddev_gmean = 1;
+    var median_gmean = 1;
+
     plotState.commits.forEach(commit => {
       // Construct synthetic object
       var obj = {
         commit: commit,
         benchmark: `Geometric mean (${plotState.benchmarks.length})`,
-        value: 1
+        min: 1,
+        max: 1,
+        mean: 1,
+        stddev: 1,
+        median: 1
       };
+
       // Coalesce on benchmarks
       plotState.data.forEach(o => {
         if (o.commit === commit) {
-          var val = o.value;
-          // Some values might be undefined
-          if (val === undefined) {
-            val = 1;
-          }
+          var min = o.min || 1;
+          var max = o.max || 1;
+          var mean = o.mean || 1;
+          var stddev = o.stddev || 1;
+          var median = o.median || 1;
+
           if (plotState.reference && (o.commit === plotState.reference)) {
-            ref_gmean = ref_gmean * val;
+            min_gmean = min_gmean * min;
+            max_gmean = max_gmean * max;
+            mean_gmean = mean_gmean * mean;
+            stddev_gmean = stddev_gmean * stddev;
+            median_gmean = median_gmean * median;
           }
+
           // Multiply values for all benchmarks
-          obj.value = obj.value * o.value;
+          obj.min = obj.min * o.min;
+          obj.max = obj.max * o.max;
+          obj.mean = obj.mean * o.mean;
+          obj.stddev = obj.stddev * o.stddev;
+          obj.median = obj.median * o.median;
         }
       })
+
       // Take the Nth root to get the gmean
-      obj.value = Math.pow(obj.value, 1/plotState.benchmarks.length);
+      obj.min = Math.pow(obj.min, 1/plotState.benchmarks.length);
+      obj.max = Math.pow(obj.max, 1/plotState.benchmarks.length);
+      obj.mean = Math.pow(obj.mean, 1/plotState.benchmarks.length);
+      obj.stddev = Math.pow(obj.stddev, 1/plotState.benchmarks.length);
+      obj.median = Math.pow(obj.median, 1/plotState.benchmarks.length);
+
       _data.push(obj);
     })
 
     // Factor in the commutator to keep normalization at 1
-    ref_gmean = Math.pow(ref_gmean, 1/plotState.benchmarks.length);
+    min_gmean = Math.pow(min_gmean, 1/plotState.benchmarks.length);
+    max_gmean = Math.pow(max_gmean, 1/plotState.benchmarks.length);
+    mean_gmean = Math.pow(mean_gmean, 1/plotState.benchmarks.length);
+    stddev_gmean = Math.pow(stddev_gmean, 1/plotState.benchmarks.length);
+    median_gmean = Math.pow(median_gmean, 1/plotState.benchmarks.length);
 
     // Renormalize results
     _data.forEach(o => {
-      if (ref_gmean === 0) {
-        o.value = 0;
+      if (min_gmean === 0) {
+        o.min = 0;
       } else {
-        o.value = o.value / ref_gmean;
+        o.min = o.min / min_gmean;
+      }
+      if (max_gmean === 0) {
+        o.max = 0;
+      } else {
+        o.max = o.max / max_gmean;
+      }
+      if (mean_gmean === 0) {
+        o.mean = 0;
+      } else {
+        o.mean = o.mean / mean_gmean;
+      }
+      if (stddev_gmean === 0) {
+        o.stddev = 0;
+      } else {
+        o.stddev = o.stddev / stddev_gmean;
+      }
+      if (median_gmean === 0) {
+        o.median = 0;
+      } else {
+        o.median = o.median / median_gmean;
       }
     });
 
@@ -316,10 +377,6 @@ function updatePlotState() {
   setPlotSubtitle(plotState.subtitle);
 
   drawPlot();
-}
-
-function avg(v) {
-  return (v.reduce((a, b) => a + b, 0) / v.length) || 0;
 }
 
 function gmean(a) {
@@ -365,10 +422,14 @@ async function init(url) {
     .then(res => {
       if (res.status == 200) {
         res.json().then((data) => {
-          // NOTE: Transform list of strings into average value
-          // TODO: Do this when preparing JSON?
           data.results.forEach(o => {
-            o.value = avg(o.value.map(Number));
+            o.values = o.values.map(Number);
+
+            o.mean = d3.mean(o.values) || 0;
+            o.median = d3.median(o.values) || 0;
+            o.stddev = d3.deviation(o.values) || 0;
+            o.max = d3.max(o.values) || 0;
+            o.min = d3.min(o.values) || 0;
           });
 
           forensicsData = data;

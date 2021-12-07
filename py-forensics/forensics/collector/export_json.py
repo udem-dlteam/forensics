@@ -57,7 +57,7 @@ with db_session():
             "benchmark": r.benchmark.name,
             "commit": r.build.commit.name,
             "timestamp": (r.build.commit.timestamp).timestamp()*1000,
-            "value": r.result.split(' ')
+            "values": r.result.split(' ')
         } for r in _runs]
 
 _json = json.dumps(output, indent=2)
