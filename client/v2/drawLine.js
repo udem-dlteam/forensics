@@ -252,8 +252,8 @@ function drawLine() {
      });
 
   // Legend
-  if (((plotState.xAxis === "commit") && (plotState.benchmarks.length > 1)) ||
-      ((plotState.xAxis === "benchmark") && (plotState.commits.length > 1))) {
+  if (!plotState.geometricMean && (((plotState.xAxis === "commit") && (plotState.benchmarks.length > 1)) ||
+       ((plotState.xAxis === "benchmark") && (plotState.commits.length > 1)))) {
     svg.selectAll("legendMarks")
        .data(lines)
        .enter()
