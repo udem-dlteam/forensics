@@ -215,6 +215,10 @@ function updatePlotState() {
     plotState.benchmarks.forEach(bench => {
       // Value to normalize to
       var norm = getReferenceValue(ref, bench);
+      if (norm === 0) {
+        unsetReference();
+        return updatePlotState();
+      }
       // Mutate in a single pass
       plotState.data.forEach(o => {
         if (o.benchmark === bench) {
@@ -266,7 +270,11 @@ function updatePlotState() {
 
     // Renormalize results
     _data.forEach(o => {
-      o.value = o.value / ref_gmean;
+      if (ref_gmean === 0) {
+        o.value = 0;
+      } else {
+        o.value = o.value / ref_gmean;
+      }
     });
 
     plotState.data = _data;
