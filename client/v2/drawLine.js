@@ -8,12 +8,6 @@ function drawLine() {
   const ys = data.map(o => o.value);
   const zs = d3.map(data, o => o[plotState.ordinal]);
 
-  // Mean, median, stddev for heuristics
-  var _ys = ys.filter(o => o.value !== 0);
-  var mean = d3.mean(_ys);
-  var median = d3.median(_ys);
-  var stddev = d3.deviation(_ys);
-
   lines = Array.from(d3.group(data, d => d[plotState.ordinal]),
                      ([ordinal, values]) => ({ordinal, values}));
 
@@ -61,24 +55,30 @@ function drawLine() {
                          .tickValues(xs)
                          .tickFormat((e, i) => xData[i]);
 
-  const yMax = (() => {
-    // Get number of digits
-    const expt = Math.log(d3.max(ys)) * Math.LOG10E + 1 | 0;
-    const scale = Math.pow(10, expt);
-    return Math.ceil(scale * (mean + stddev)) / scale;
-  })();
-
+  // Start with a default yMax
   if (plotState.stickyZero) {
     // Draw scales up to ceiling of decimal place
-    var yDomain = [0, yMax];
+    var yMin = 0;
+    var yMax = d3.max(ys);
   } else {
-    yDomain = [0.85 * d3.min(ys, d => d || Infinity), // Ignore zero values in scaling
-               yMax]; // Keep space to show all bars
+    yMin = 0.85 * d3.min(ys, d => d || Infinity);
   }
-  // NOTE: Sticky zero?
-  let yScale = d3.scaleLinear(yDomain, [height, 0]);
 
-  let yAxisGenerator = d3.axisLeft(yScale).tickSize(-width);
+  // Create the scale
+  var yScale = d3.scaleLinear([yMin, yMax], [height, 0]);
+
+  // Figure out the proper yMax
+  var yMax = (() => {
+    var ticks = yScale.ticks();
+    var nticks = ticks.length + 1;
+    var step = ticks[1] - ticks[0];
+    return ticks[nticks-2]+step;
+  })();
+
+  // Create a new scale with yMax as the last tick
+  yScale = d3.scaleLinear([yMin, yMax], [height, 0]);
+
+  var yAxisGenerator = d3.axisLeft(yScale).tickSize(-width);
 
   var tooltip = d3.select("body").append("div")
                   .attr("id", "d3-tooltip")
