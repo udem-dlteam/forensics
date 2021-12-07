@@ -26,6 +26,7 @@ const chartDiv = document.getElementById("chart");
 const stickyZeroCheckbox = document.getElementById("sticky-zero-cb");
 const plotSubtitleText = document.getElementById("plot-subtitle-text");
 const exportSVGBtn = document.getElementById("export-svg");
+const shareChartBtn = document.getElementById("share-chart");
 const geometricMeanCheckbox = document.getElementById("geometric-mean-cb");
 
 var selects = [benchmarkSelect, commitSelect, configSelect, plotTypeSelect,
@@ -45,6 +46,10 @@ selects.forEach((o) => {
 exportSVGBtn.onclick = () => {
   var path = prompt("Export SVG to path:", "chart.svg");
   return exportSVG(path);
+}
+
+shareChartBtn.onclick = () => {
+  plotStateToURL();
 }
 
 // https://stackoverflow.com/a/66881124
@@ -86,7 +91,6 @@ function unsetReference() {
 plotTitleInput.oninput = (e) => {
   setPlotTitle(e.target.value);
   plotState.title = e.target.value;
-  plotStateToURL();
 }
 
 // Utility function
@@ -310,9 +314,6 @@ function updatePlotState() {
 
   // Set the plot subtitle
   setPlotSubtitle(plotState.subtitle);
-
-  // Change the URL for easy sharing
-  plotStateToURL();
 
   drawPlot();
 }
