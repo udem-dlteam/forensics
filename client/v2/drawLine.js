@@ -252,25 +252,27 @@ function drawLine() {
      });
 
   // Legend
-  svg.selectAll("legendMarks")
-     .data(lines)
-     .enter()
-     .append("rect")
-     .attr("x", width + 10)
-     .attr("y", (d, i) => margin.top + i * 25)
-     .attr("width", 10)
-     .attr("height", 10)
-     .style("fill", (d, i) => zScale(i));
+  if (((plotState.xAxis === "commit") && (plotState.benchmarks.length > 1)) ||
+      ((plotState.xAxis === "benchmark") && (plotState.commits.length > 1))) {
+    svg.selectAll("legendMarks")
+       .data(lines)
+       .enter()
+       .append("rect")
+       .attr("x", width + 10)
+       .attr("y", (d, i) => margin.top + i * 25)
+       .attr("width", 10)
+       .attr("height", 10)
+       .style("fill", (d, i) => zScale(i));
 
-  svg.selectAll("legendLabels")
-     .data(lines)
-     .enter()
-     .append("text")
-     .attr("x", width + 25)
-     .attr("y", (d, i) => margin.top + i * 25 + 5)
-     .style("fill", "currentColor")
-     .text(d => d.ordinal)
-     .attr("text-anchor", "left")
-     .style("alignment-baseline", "middle")
-
+    svg.selectAll("legendLabels")
+       .data(lines)
+       .enter()
+       .append("text")
+       .attr("x", width + 25)
+       .attr("y", (d, i) => margin.top + i * 25 + 5)
+       .style("fill", "currentColor")
+       .text(d => d.ordinal)
+       .attr("text-anchor", "left")
+       .style("alignment-baseline", "middle")
+  }
 }
