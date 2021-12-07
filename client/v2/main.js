@@ -222,7 +222,7 @@ function updatePlotState() {
     plotState.benchmarks.forEach(bench => {
       // Value to normalize to
       var min, max, mean, stddev, median;
-      [min, max, mean, stddev, median] = getReferenceValue(ref, bench);
+      [min, max, mean, stddev, median] = getReferenceValues(ref, bench);
 
       if (mean === 0) {
         unsetReference();
