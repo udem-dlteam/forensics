@@ -171,7 +171,11 @@ function drawLine() {
        .attr("x", textRect.x - chartRect.x - margin.left)
        .attr("y", textRect.y - chartRect.y - margin.top)
        .attr("width", textRect.width)
-       .attr("height", textRect.height);
+       .attr("height", textRect.height)
+       .on("click", (event, i) => {
+         unsetReference();
+         updatePlotState();
+       });
   }
 
   // Add the lines

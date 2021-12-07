@@ -143,6 +143,7 @@ footer {
 .reference-rect {
   fill: transparent;
   stroke: maroon;
+  cursor: pointer;
 }
 
 .error-line {
