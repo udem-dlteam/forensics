@@ -73,7 +73,7 @@ function drawLine() {
     var nticks = ticks.length + 1;
     var step = ticks[1] - ticks[0];
     return ticks[nticks-2]+step;
-  })();
+  })() * 1.1;
 
   // Create a new scale with yMax as the last tick
   yScale = d3.scaleLinear([yMin, yMax], [height, 0]);
