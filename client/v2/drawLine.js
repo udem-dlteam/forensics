@@ -93,7 +93,7 @@ function drawLine() {
   svg.append("g")
      .call(xAxisGenerator)
      .attr("class", "x-axis")
-     .attr("transform", "translate(0," + height + ")") // lower the axis
+     .attr("transform", "translate(0," + height + ")")
      .selectAll("text")
      .style("text-anchor", "start")
      .style("font-size", () => {
@@ -150,14 +150,27 @@ function drawLine() {
                    }
                  }));
 
-  // Add identification line for 1.0 when normalized
   if (plotState.reference) {
+    // Add identification line for 1.0 when normalized
     svg.append("line")
        .attr("class", "reference-line")
        .attr("x1", 0)
        .attr("y1", yScale(1))
        .attr("x2", width)
        .attr("y2", yScale(1))
+
+    // Add rectangle over tick label
+    var chartRect = document.getElementById("d3-chart")
+                            .getBoundingClientRect();
+    var textRect = document.getElementsByClassName("reference-tick")[0]
+                           .getBoundingClientRect();
+
+    svg.append("rect")
+       .attr("class", "reference-rect")
+       .attr("x", textRect.x - chartRect.x - margin.left)
+       .attr("y", textRect.y - chartRect.y - margin.top)
+       .attr("width", textRect.width)
+       .attr("height", textRect.height);
   }
 
   // Add the lines

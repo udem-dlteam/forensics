@@ -17,7 +17,7 @@ function initPresets(opts) {
       var _this = this;
 
       /* Default options are retrieved from the HTML */
-      _this.name = "All releases, normalized to the latest"
+      _this.name = "All commits, normalized to the latest"
       _this.system = 'gambit';
       _this.benchmarks = opts[_this.system].benchmarks.slice(0, 1); // First benchmark
       _this.commits = opts[_this.system].commits; // All commits

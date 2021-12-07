@@ -140,8 +140,14 @@ footer {
   fill: maroon;
 }
 
+.reference-rect {
+  fill: transparent;
+  stroke: maroon;
+}
+
 .dot {
   r: 3px;
+  cursor: pointer;
 }
 
 div.tooltip {
