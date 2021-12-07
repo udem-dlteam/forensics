@@ -135,6 +135,10 @@ footer {
   opacity: 1;
 }
 
+.reference-label {
+  fill: blue;
+}
+
 .dot {
   r: 3px;
 }

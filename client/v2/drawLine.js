@@ -110,6 +110,28 @@ function drawLine() {
      .attr("dx", ".8em")
      .attr("dy", "-5px")
      .attr("transform", "rotate(90)")
+     .attr("class", d => {
+       var commit = plotState.commits[d];
+
+       if (plotState.reference) {
+         if (commit === plotState.reference) {
+           return "reference-label";
+         } else {
+           return "";
+         }
+       }
+     })
+     .style("cursor", "pointer")
+     .on("click", (event, i) => {
+       ref = plotState.commits[i];
+       // Either clear or set the reference commit
+       if (plotState.reference === ref) {
+         unsetReference();
+       } else {
+         setReference(ref);
+       }
+       updatePlotState();
+     });
 
   svg.append("g")
      .call(yAxisGenerator)
