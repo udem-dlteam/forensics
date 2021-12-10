@@ -66,7 +66,11 @@ function regressionAnalysis() {
   // NOTE: Add contents of drawPlot
 
   var then = "v4.9.3";
-  var now = forensicsData.options.gambit.commits[forensicsData.options.gambit.commits.length - 1];
+  if (plotState.reference) {
+    var now = plotState.reference;
+  } else {
+    now = forensicsData.options.gambit.commits[forensicsData.options.gambit.commits.length - 1];
+  }
   var data = forensicsData.results.filter(o => ((o.commit === then) || (o.commit === now)));
 
   // Hard copy
@@ -85,7 +89,7 @@ function regressionAnalysis() {
     _now.median = _now.median / norm;
   })
 
-  plotState.data = data.filter(o => o.commit === now).sort((a,b) => a.timestamp - b.timestamp);
+  plotState.data = data.filter(o => o.commit === now).sort((a,b) => a.mean - b.mean);
   plotState.xAxis = "benchmark";
   plotState.ordinal = "commit";
 
