@@ -8,15 +8,18 @@ body {
 }
 
 #app {
+  margin-left: 1vh;
+  margin-top: 1vh;
   height: 100%;
 }
 
-#header, #footer {
+#footer {
   height: 5%;
 }
 
 #contents {
-  height: 90%;
+  padding-top: 3.5rem;
+  height: 95%;
 }
 
 #options {
