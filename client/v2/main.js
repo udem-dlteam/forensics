@@ -27,9 +27,10 @@ const stickyZeroCheckbox = document.getElementById("sticky-zero-cb");
 const plotSubtitleText = document.getElementById("plot-subtitle-text");
 const exportSVGBtn = document.getElementById("export-svg");
 const shareChartBtn = document.getElementById("share-chart");
+const regressionAnalysisBtn = document.getElementById("regression-analysis");
 const geometricMeanCheckbox = document.getElementById("geometric-mean-cb");
 const commitNameh4 = document.getElementById("commit-name");
-const commitMessageP = document.getElementById("commit-message");
+const commitMessagePre = document.getElementById("commit-message");
 
 var selects = [benchmarkSelect, commitSelect, configSelect, plotTypeSelect,
                xAxisSelect,yAxisScaleSelect, sortTypeSelect, stickyZeroCheckbox,
@@ -96,7 +97,7 @@ function setCommitName(commit) {
 }
 
 function setCommitMessage(commit) {
-  commitMessageP.innerHTML = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+  commitMessagePre.innerHTML = forensicsData.options.gambit.commit_messages[commit].replaceAll('\\n', '<br />');
 }
 
 // Don't regen whole plot when only changing the title
