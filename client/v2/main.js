@@ -148,8 +148,9 @@ function unsetReference() {
 }
 
 function setCommitName(commit) {
+  var timestamp = forensicsData.results.filter(o => o.commit===commit)[0].timestamp;
   var sha = forensicsData.options.gambit.commitShas[commit];
-  commitNameh4.innerHTML = `<a href="https://github.com/gambit/gambit/commit/${sha}">${commit}</a>`;
+  commitNameh4.innerHTML = `<a href="https://github.com/gambit/gambit/commit/${sha}">${commit}</a> <span>${new Date(timestamp)}</span>`;
 }
 
 function setCommitMessage(commit) {
