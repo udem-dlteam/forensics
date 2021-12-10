@@ -413,6 +413,11 @@ function updatePlotState() {
   // Set the plot subtitle
   setPlotSubtitle(plotState.subtitle);
 
+  if (plotState.reference) {
+    setCommitName(plotState.reference);
+    setCommitMessage(plotState.reference);
+  }
+
   drawPlot();
 }
 
