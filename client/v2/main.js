@@ -47,7 +47,9 @@ selects.forEach((o) => {
 
 exportSVGBtn.onclick = () => {
   var path = prompt("Export SVG to path:", "chart.svg");
-  return exportSVG(path);
+  if (path !== null) {
+    return exportSVG(path);
+  }
 }
 
 shareChartBtn.onclick = () => {
