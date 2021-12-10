@@ -104,6 +104,10 @@ footer {
   width: 100%;
 }
 
+#plot-title-div > input {
+  max-width: 100%;
+}
+
 #chart > h4 {
   margin: 0;
   text-align: center;
