@@ -124,7 +124,7 @@ function drawLine() {
      })
      .style("cursor", "pointer")
      .on("click", (event, i) => {
-       ref = plotState.commits[i];
+       var ref = plotState.commits[i];
        // Either clear or set the reference commit
        if (plotState.reference === ref) {
          unsetReference();
@@ -132,7 +132,31 @@ function drawLine() {
          setReference(ref);
        }
        updatePlotState();
-     });
+     })
+     .on("mouseover", (event, i) => {
+       var commit = plotState.commits[i];
+
+       svg.append("line")
+          .attr("class", "indicator-line")
+          .attr("x1", xScale(i))
+          .attr("y1", yScale(0))
+          .attr("x2", xScale(i))
+          .attr("y2", yScale(plotState.data[i].mean));
+
+       setCommitName(commit);
+       setCommitMessage(commit);
+     })
+     .on("mouseout", (event, i) => {
+       var _line = document.getElementsByClassName("indicator-line")[0];
+       if (_line !== undefined) {
+         _line.remove();
+       }
+
+       if (plotState.reference) {
+         setCommitName(plotState.reference);
+         setCommitMessage(plotState.reference);
+       }
+     })
 
   svg.append("g")
      .call(yAxisGenerator)
@@ -158,7 +182,7 @@ function drawLine() {
        .attr("x1", 0)
        .attr("y1", yScale(1))
        .attr("x2", width)
-       .attr("y2", yScale(1))
+       .attr("y2", yScale(1));
 
     // Add rectangle over tick label
     var chartRect = document.getElementById("d3-chart")

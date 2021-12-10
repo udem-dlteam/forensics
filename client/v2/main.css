@@ -4,7 +4,7 @@ html, body {
 }
 
 body {
-  overflow: hidden;
+  /* overflow: hidden; */
 }
 
 #app {
@@ -154,6 +154,11 @@ footer {
   stroke-width: 1;
 }
 
+.indicator-line {
+  stroke: gray;
+  stroke-width: 1;
+}
+
 .dot {
   r: 3px;
   cursor: pointer;
@@ -171,4 +176,11 @@ div.tooltip {
 
 .bar:hover {
   fill: lightgray;
+}
+
+#commit-info {
+  margin-left: 1vh;
+}
+#commit-message {
+  max-width: 80%;
 }
