@@ -43,7 +43,9 @@ with db_session():
 
         _system = options[system.name]
 
-        _system["commit_messages"] = {c.name:c.description for c in select(c for c in Commit)}
+        _system["commitMessages"] = {c.name:c.description for c in select(c for c in Commit)}
+
+        _system["commitShas"] = {c.name:c.sha for c in select(c for c in Commit)}
 
         _system["benchmarks"] = [b.name for b in select(bench for bench in Benchmark for b in Build for r in Run if b.system == system and bench == r.benchmark)]
 
