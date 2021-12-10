@@ -4,36 +4,19 @@ function drawBar() {
 
   const colors = d3.schemeCategory10;
 
+  // The domain should extend up to the maximum "maximum" value
+  var yMax = d3.max(data.map(o => o.max));
+
   const xs = d3.map(data, o => o[plotState.xAxis]);
-  const ys = d3.map(data, o => o.value);
+  const ys = d3.map(data, o => o.mean);
   const zs = d3.map(data, o => o[plotState.ordinal]);
-
-  // Mean, median, stddev
-  var _ys = ys.filter(o => o.value !== 0);
-  var mean = d3.mean(_ys);
-  var median = d3.median(_ys);
-  var stddev = d3.deviation(_ys);
-
-  // Remove negative mean - stddev value
-  if ((mean - stddev) < 0) {
-    var stats = [mean, median, mean + stddev];
-    var statsLabels = [`mean (${mean.toFixed(2)})`,
-                       `median (${median.toFixed(2)})`,
-                       `stddev+ (${(mean + stddev).toFixed(2)})`]
-  } else {
-    stats = [mean, median, mean-stddev, mean+stddev];
-    var statsLabels = [`mean (${mean.toFixed(2)})`,
-                       `median (${median.toFixed(2)})`,
-                       `stddev- (${(mean - stddev).toFixed(2)})`,
-                       `stddev+ (${(mean + stddev).toFixed(2)})`]
-  }
 
   // Keep only unique values
   const xDomain = new d3.InternSet(xs);
   const zDomain = new d3.InternSet(zs);
 
   // Handle sticky zero
-  const yMax = Math.ceil(10 * (mean + stddev)) / 10;
+  // const yMax = Math.ceil(10 * (mean + stddev)) / 10;
   if (plotState.stickyZero) {
     // Draw scales up to ceiling of decimal place
     var yDomain = [0, yMax];
@@ -105,7 +88,7 @@ function drawBar() {
                    tooltip.transition()
                           .duration(200)
                           .style("opacity", .9);
-                   tooltip.html(`Benchmark: ${data[i].benchmark}<br /><br />Commit: ${data[i].commit}<br /><br />Value: ${data[i].value}`)
+                   tooltip.html(`Benchmark: ${data[i].benchmark}<br /><br />Commit: ${data[i].commit}<br /><br />Mean: ${data[i].mean}`)
                           .style("left", (event.pageX) + "px")
                           .style("top", (event.pageY - 28) + "px");
                  })
@@ -173,14 +156,4 @@ function drawBar() {
      .text(d => d)
      .attr("text-anchor", "left")
      .style("alignment-baseline", "middle")
-
-  // Right y axis for statistics
-  const statsAxis = d3.axisRight(yScale).ticks(stats.length);
-  svg.append("g")
-     .attr("transform", `translate(${width},0)`)
-     .call(statsAxis
-           .tickSize(10)
-           .tickValues(stats)
-           .tickFormat((d, i) => statsLabels[i]))
-     .call(g => g.select(".domain").remove());
 }

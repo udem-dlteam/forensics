@@ -57,6 +57,57 @@ shareChartBtn.onclick = () => {
   plotStateToURL();
 }
 
+regressionAnalysisBtn.onclick = () => {
+  regressionAnalysis();
+}
+
+// TODO: Combine with drawPlot
+function regressionAnalysis() {
+  // NOTE: Add contents of drawPlot
+
+  var then = "v4.9.3";
+  var now = forensicsData.options.gambit.commits[forensicsData.options.gambit.commits.length - 1];
+  var data = forensicsData.results.filter(o => ((o.commit === then) || (o.commit === now)));
+
+  // Hard copy
+  data = JSON.parse(JSON.stringify(data));
+
+  forensicsData.options.gambit.benchmarks.forEach(b => {
+    var _then = data.filter(o => ((o.benchmark === b) && (o.commit === then)))[0];
+    var _now = data.filter(o => ((o.benchmark === b) && (o.commit === now)))[0];
+
+    var norm = _then.mean;
+
+    _now.min = _now.min / norm;
+    _now.max = _now.max / norm;
+    _now.mean = _now.mean / norm;
+    _now.stddev = _now.stddev / norm;
+    _now.median = _now.median / norm;
+  })
+
+  plotState.data = data.filter(o => o.commit === now).sort((a,b) => a.timestamp - b.timestamp);
+  plotState.xAxis = "benchmark";
+  plotState.ordinal = "commit";
+
+  console.log(data);
+
+  var chart = document.getElementById("d3-chart");
+  var tooltip = document.getElementById("d3-tooltip");
+
+  // Remove old chart
+  if (chart !== null) {
+    chart.remove();
+  }
+
+  // Remove old tooltip
+  if (tooltip !== null) {
+    tooltip.remove();
+  }
+
+  drawBar();
+
+}
+
 // https://stackoverflow.com/a/66881124
 function exportSVG(path){
   fetch('/main.css')
