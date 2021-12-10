@@ -144,11 +144,12 @@ function unsetReference() {
 }
 
 function setCommitName(commit) {
-  commitNameh4.innerHTML = commit;
+  var sha = forensicsData.options.gambit.commitShas[commit];
+  commitNameh4.innerHTML = `<a href="https://github.com/gambit/gambit/commit/${sha}">${commit}</a>`;
 }
 
 function setCommitMessage(commit) {
-  commitMessagePre.innerHTML = forensicsData.options.gambit.commit_messages[commit].replaceAll('\\n', '<br />');
+  commitMessagePre.innerHTML = forensicsData.options.gambit.commitMessages[commit].replaceAll('\\n', '<br />');
 }
 
 // Don't regen whole plot when only changing the title
