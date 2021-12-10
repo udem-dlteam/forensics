@@ -5,6 +5,8 @@ function drawLine() {
   const colors = d3.schemeCategory10;
   const zScale = d3.scaleOrdinal(colors);
 
+  // The domain should extend up to the maximum "maximum" value
+  var yMax = d3.max(data.map(o => o.max));
   const ys = data.map(o => o.mean);
   const zs = d3.map(data, o => o[plotState.ordinal]);
 
@@ -59,10 +61,8 @@ function drawLine() {
   if (plotState.stickyZero) {
     // Draw scales up to ceiling of decimal place
     var yMin = 0;
-    var yMax = d3.max(ys);
   } else {
     yMin = 0.85 * d3.min(ys, d => d || Infinity);
-    yMax = d3.max(ys);
   }
 
   // Create the scale

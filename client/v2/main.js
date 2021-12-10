@@ -211,20 +211,17 @@ function updatePlotState() {
   // Inefficient. Change the underlying data structure for
   // faster access or maybe binary search over sorted timestamps
   function normalize(data, ref) {
-    function getReferenceValues(ref, bench) {
-      var obj = forensicsData.results.filter(o => {
+    function getReferenceValue(ref, bench) {
+      return forensicsData.results.filter(o => {
         return (o.benchmark === bench) && (o.commit === ref);
-      })[0];
-
-      return [obj.min, obj.max, obj.mean, obj.stddev, obj.median];
+      })[0].mean;
     }
 
     plotState.benchmarks.forEach(bench => {
       // Value to normalize to
-      var min, max, mean, stddev, median;
-      [min, max, mean, stddev, median] = getReferenceValues(ref, bench);
+      var norm = getReferenceValue(ref, bench);
 
-      if (mean === 0) {
+      if (norm === 0) {
         unsetReference();
         return updatePlotState();
       }
@@ -232,11 +229,11 @@ function updatePlotState() {
       // Mutate in a single pass
       plotState.data.forEach(o => {
         if (o.benchmark === bench) {
-          o.min = o.min / min;
-          o.max = o.max / max;
-          o.mean = o.mean / mean;
-          o.stddev = o.stddev / stddev;
-          o.median = o.median / median;
+          o.min = o.min / norm;
+          o.max = o.max / norm;
+          o.mean = o.mean / norm;
+          o.stddev = o.stddev / norm;
+          o.median = o.median / norm;
         }
       })
     })
@@ -252,11 +249,7 @@ function updatePlotState() {
     // Construct a new data array containing only the geometric mean
     var _data = [];
 
-    var min_gmean = 1;
-    var max_gmean = 1;
     var mean_gmean = 1;
-    var stddev_gmean = 1;
-    var median_gmean = 1;
 
     plotState.commits.forEach(commit => {
       // Construct synthetic object
@@ -280,11 +273,7 @@ function updatePlotState() {
           var median = o.median || 1;
 
           if (plotState.reference && (o.commit === plotState.reference)) {
-            min_gmean = min_gmean * min;
-            max_gmean = max_gmean * max;
             mean_gmean = mean_gmean * mean;
-            stddev_gmean = stddev_gmean * stddev;
-            median_gmean = median_gmean * median;
           }
 
           // Multiply values for all benchmarks
@@ -307,38 +296,22 @@ function updatePlotState() {
     })
 
     // Factor in the commutator to keep normalization at 1
-    min_gmean = Math.pow(min_gmean, 1/plotState.benchmarks.length);
-    max_gmean = Math.pow(max_gmean, 1/plotState.benchmarks.length);
     mean_gmean = Math.pow(mean_gmean, 1/plotState.benchmarks.length);
-    stddev_gmean = Math.pow(stddev_gmean, 1/plotState.benchmarks.length);
-    median_gmean = Math.pow(median_gmean, 1/plotState.benchmarks.length);
 
     // Renormalize results
     _data.forEach(o => {
-      if (min_gmean === 0) {
-        o.min = 0;
-      } else {
-        o.min = o.min / min_gmean;
-      }
-      if (max_gmean === 0) {
-        o.max = 0;
-      } else {
-        o.max = o.max / max_gmean;
-      }
       if (mean_gmean === 0) {
+        o.min = 0;
+        o.max = 0;
         o.mean = 0;
-      } else {
-        o.mean = o.mean / mean_gmean;
-      }
-      if (stddev_gmean === 0) {
         o.stddev = 0;
-      } else {
-        o.stddev = o.stddev / stddev_gmean;
-      }
-      if (median_gmean === 0) {
         o.median = 0;
       } else {
-        o.median = o.median / median_gmean;
+        o.min = o.min / mean_gmean;
+        o.max = o.max / mean_gmean;
+        o.mean = o.mean / mean_gmean;
+        o.stddev = o.stddev / mean_gmean;
+        o.median = o.median / mean_gmean;
       }
     });
 
