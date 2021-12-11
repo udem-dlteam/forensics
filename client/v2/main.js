@@ -82,18 +82,20 @@ function regressionAnalysis() {
 
     var norm = _then.mean;
 
-    _now.min = _now.min / norm;
-    _now.max = _now.max / norm;
-    _now.mean = _now.mean / norm;
-    _now.stddev = _now.stddev / norm;
-    _now.median = _now.median / norm;
+    _now.min = (_now.min / norm) || 0;
+    _now.max = (_now.max / norm) || 0;
+    _now.mean = (_now.mean / norm) || 0;
+    _now.stddev = (_now.stddev / norm) || 0;
+    _now.median = (_now.median / norm) || 0;
   })
 
-  plotState.data = data.filter(o => o.commit === now).sort((a,b) => a.mean - b.mean);
+  plotState.data = data.filter(o => (o.commit === now) && (o.mean > 1))
+                       .sort((a, b) => a.mean - b.mean)
+
   plotState.xAxis = "benchmark";
   plotState.ordinal = "commit";
-
-  console.log(data);
+  plotState.commits = [plotState.reference];
+  setPlotSubtitle(`(normalized to ${then})`);
 
   var chart = document.getElementById("d3-chart");
   var tooltip = document.getElementById("d3-tooltip");
@@ -299,11 +301,11 @@ function updatePlotState() {
       // Mutate in a single pass
       plotState.data.forEach(o => {
         if (o.benchmark === bench) {
-          o.min = o.min / norm;
-          o.max = o.max / norm;
-          o.mean = o.mean / norm;
-          o.stddev = o.stddev / norm;
-          o.median = o.median / norm;
+          o.min = (o.min / norm) || 0;
+          o.max = (o.max / norm) || 0;
+          o.mean = (o.mean / norm) || 0;
+          o.stddev = (o.stddev / norm) || 0;
+          o.median = (o.median / norm) || 0;
         }
       })
     })
@@ -377,11 +379,11 @@ function updatePlotState() {
         o.stddev = 0;
         o.median = 0;
       } else {
-        o.min = o.min / mean_gmean;
-        o.max = o.max / mean_gmean;
-        o.mean = o.mean / mean_gmean;
-        o.stddev = o.stddev / mean_gmean;
-        o.median = o.median / mean_gmean;
+        o.min = (o.min / mean_gmean) || 0;
+        o.max = (o.max / mean_gmean) || 0;
+        o.mean = (o.mean / mean_gmean) || 0;
+        o.stddev = (o.stddev / mean_gmean) || 0;
+        o.median = (o.median / mean_gmean) || 0;
       }
     });
 

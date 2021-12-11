@@ -79,7 +79,7 @@ function drawBar() {
                      c = zs[i];
                    }
                    // Color the reference for easier identification
-                   if (ref && (c === ref)) {
+                   if ((plotState.commits.length > 1) && (ref && (c === ref))) {
                      return "#000000";
                    }
                    return zScale(zs[i]);
