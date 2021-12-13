@@ -89,7 +89,7 @@ function regressionAnalysis() {
     _now.median = (_now.median / norm) || 0;
   })
 
-  plotState.data = data.filter(o => (o.commit === now) && (o.mean > 1))
+  plotState.data = data.filter(o => (o.commit === now) && (o.mean !== 0))
                        .sort((a, b) => a.mean - b.mean)
 
   plotState.xAxis = "benchmark";

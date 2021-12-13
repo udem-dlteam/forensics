@@ -4,9 +4,6 @@ function drawBar() {
 
   const colors = d3.schemeCategory10;
 
-  // The domain should extend up to the maximum "maximum" value
-  var yMax = d3.max(data.map(o => o.max));
-
   const xs = d3.map(data, o => o[plotState.xAxis]);
   const ys = d3.map(data, o => o.mean);
   const zs = d3.map(data, o => o[plotState.ordinal]);
@@ -15,21 +12,13 @@ function drawBar() {
   const xDomain = new d3.InternSet(xs);
   const zDomain = new d3.InternSet(zs);
 
-  // Handle sticky zero
-  // const yMax = Math.ceil(10 * (mean + stddev)) / 10;
-  if (plotState.stickyZero) {
-    // Draw scales up to ceiling of decimal place
-    var yDomain = [0, yMax];
-  } else {
-    yDomain = [0.85 * d3.min(ys, d => d || Infinity), // Ignore zero values in scaling
-               yMax]; // Keep space to show all bars
-  }
+  var yDomain = d3.extent(data.map(o => o.mean));
 
   // Full scale
   const xScale = d3.scaleBand(xDomain, [0, width]).paddingInner(0.1);
   // Sub scale
   const xzScale = d3.scaleBand(zDomain, [0, xScale.bandwidth()]).padding(0.2);
-  const yScale = d3.scaleLinear(yDomain, [height, 0]);
+  const yScale = d3.scaleLog(yDomain, [height, 0]);
   // Colors per ordinal
   const zScale = d3.scaleOrdinal(zDomain, colors);
   const xAxis = d3.axisBottom(xScale).tickSizeOuter(0);
@@ -59,7 +48,7 @@ function drawBar() {
                  .attr("y", -margin.top / 2)
                  .attr("fill", "currentColor")
                  .attr("text-anchor", "start")
-                 .text("Run time (s)"));
+                 .text("Mean run time ratio (log)"));
 
   const bar = svg.append("g")
                  .selectAll("rect")
@@ -71,18 +60,14 @@ function drawBar() {
                  .attr("width", xzScale.bandwidth())
                  .attr("height", i => yScale(yDomain[0]) - yScale(ys[i]))
                  .attr("fill", i => {
-                   var ref = plotState.reference;
-                   // Properly select commit based on x axis
-                   if (plotState.xAxis === "commit") {
-                     var c = xs[i];
-                   } else if (plotState.xAxis === "benchmark") {
-                     c = zs[i];
+                   var val = ys[i];
+                   if (val < 0.95) {
+                     return "green";
+                   } else if ((val >= 0.95) && (val < 1.05)) {
+                     return "yellow";
+                   } else  {
+                     return "red";
                    }
-                   // Color the reference for easier identification
-                   if ((plotState.commits.length > 1) && (ref && (c === ref))) {
-                     return "#000000";
-                   }
-                   return zScale(zs[i]);
                  })
                  .on("mouseover", (event, i) => {
                    tooltip.transition()
