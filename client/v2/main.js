@@ -26,7 +26,6 @@ const chartDiv = document.getElementById("chart");
 const stickyZeroCheckbox = document.getElementById("sticky-zero-cb");
 const plotSubtitleText = document.getElementById("plot-subtitle-text");
 const exportSVGBtn = document.getElementById("export-svg");
-const shareChartBtn = document.getElementById("share-chart");
 const regressionAnalysisBtn = document.getElementById("regression-analysis");
 const geometricMeanCheckbox = document.getElementById("geometric-mean-cb");
 const commitNameh4 = document.getElementById("commit-name");
@@ -46,15 +45,23 @@ selects.forEach((o) => {
   o.onchange = updatePlotState;
 });
 
+// Generate benchmark suites from benchmark names
+// benchmark A/B => suite A
+function suiteFromBenchmark(b) {
+  let parts = b.split('/')
+  let nParts = parts.length;
+  if (nParts == 1) {
+    return b;
+  } else {
+    return parts.slice(0, nParts - 1).join('/');
+  }
+}
+
 exportSVGBtn.onclick = () => {
   var path = prompt("Export SVG to path:", "chart.svg");
   if (path !== null) {
     return exportSVG(path);
   }
-}
-
-shareChartBtn.onclick = () => {
-  plotStateToURL();
 }
 
 regressionAnalysisBtn.onclick = () => {
@@ -89,12 +96,21 @@ function regressionAnalysis() {
     _now.median = (_now.median / norm) || 0;
   })
 
-  plotState.data = data.filter(o => (o.commit === now) && (o.mean !== 0))
-                       .sort((a, b) => a.mean - b.mean)
+  // Sort data by benchmark suite into separate lists
+  let _data = {};
+  forensicsData.options.gambit.benchmarkSuites.forEach(s => _data[s] = []);
+  data.forEach(o => _data[o.suite].push(o));
+  // Sort and recombine the data
+  plotState.data = [];
+  Object.keys(_data).forEach(k => {
+    _data[k] = _data[k].filter(o => (o.commit === now) && (o.mean !== 0))
+                       .sort((a, b) => a.mean - b.mean);
+    plotState.data.push(..._data[k]);
+  })
 
   plotState.xAxis = "benchmark";
   plotState.ordinal = "commit";
-  plotState.commits = [plotState.reference];
+  setPlotTitle("Regression analysis, latest against v4.9.3");
   setPlotSubtitle(`(normalized to ${then})`);
 
   var chart = document.getElementById("d3-chart");
@@ -474,16 +490,35 @@ async function init(url) {
         res.json().then((data) => {
           data.results.forEach(o => {
             o.values = o.values.map(Number);
-
             o.mean = d3.mean(o.values) || 0;
             o.median = d3.median(o.values) || 0;
             o.stddev = d3.deviation(o.values) || 0;
             o.max = d3.max(o.values) || 0;
             o.min = d3.min(o.values) || 0;
+            // TODO: Precalculate in python on export
+            o.suite = suiteFromBenchmark(o.benchmark);
           });
 
           forensicsData = data;
           populateOptions(data);
+
+          // TODO: Do this in Python when exporting JSON
+          // Generate benchmark suites list
+          let suites = {};
+          data.options.gambit.benchmarks.forEach(b => {
+            let parts = b.split('/');
+            let nParts = parts.length;
+            if (nParts === 1) {
+              var suite = b;
+            } else {
+              suite = parts.slice(0, nParts - 1).join('/');
+            }
+            if (!suites.hasOwnProperty(suite)) {
+              suites[suite] = true;
+            }
+          })
+          forensicsData.options.gambit.benchmarkSuites = Object.keys(suites);
+
           forensicsPresets = initPresets(data.options);
           forensicsPresets.populatePresets();
 
@@ -503,66 +538,98 @@ async function init(url) {
     });
 }
 
-// Sharing of plots
-function plotStateToURL() {
-  // Only keep certain attributes from the plotState object
-  // Keeping the whole object with all data is impractical.
-  const _plotState = (({
-    system, benchmarks, commits, config,
-    plotType, sortType, xAxis, title, reference,
-    normalizationType, stickyZero, subtitle, geometricMean
-  }) => ({
-    system, benchmarks, commits, config,
-    plotType, sortType, xAxis, title, reference,
-    normalizationType, stickyZero, subtitle, geometricMean
-  }))(plotState);
+// TODO: Reimplement the plotState encoding algorithm
+// function plotStateToURL() {
+//   // Only keep certain attributes from the plotState object
+//   // Keeping the whole object with all data is impractical.
+//   const _plotState = (({
+//     system, benchmarks, commits, config,
+//     plotType, sortType, xAxis, title, reference,
+//     normalizationType, stickyZero, subtitle, geometricMean
+//   }) => ({
+//     system, benchmarks, commits, config,
+//     plotType, sortType, xAxis, title, reference,
+//     normalizationType, stickyZero, subtitle, geometricMean
+//   }))(plotState);
 
-  const url = new URLSearchParams(_plotState).toString();
+//   // Make sets out of lists to quickly test for presence
+//   var commits = new Set(_plotState.commits);
+//   var benchmarks = new Set(_plotState.benchmarks);
 
-  window.history.pushState("", "", "?"+url);
-}
+//   // Unselected commits and benchmarks
+//   _plotState._commits = forensicsData.options.gambit.commits.filter(o => {
+//     if (!commits.has(o)) {
+//       return o;
+//     }
+//   });
+
+//   _plotState._benchmarks = forensicsData.options.gambit.benchmarks.filter(o => {
+//     if (!benchmarks.has(o)) {
+//       return o;
+//     }
+//   });
+
+//   const url = new URLSearchParams(_plotState).toString();
+
+//   window.history.pushState("", "", "?"+url);
+// }
 
 // NOTE: Maybe unify this with 'applyPreset' from presets.js
 // TODO: Have global plot update lock (mutex) to prevent updates
 // on each param change?
-function plotStateFromURL() {
-  const params = new URLSearchParams(window.location.search);
+// function plotStateFromURL() {
+//   const params = new URLSearchParams(window.location.search);
 
-  // Multiplets
-  setOptions(benchmarkSelect, params.get("benchmarks"));
-  setOptions(commitSelect, params.get("commits"));
+//   // Compute selected and new benchmarks
+//   var benchmarks = new Set(params.get("benchmarks")); // Selected
+//   var _benchmarks = new Set(params.get("_benchmarks")); // Unselected
+//   var __benchmarks = forensicsData.options.gambit.benchmarks.forEach(o => {
+//     if (benchmarks.has(o) && !_benchmarks.has(o)) {
+//       return o;
+//     }
+//   })
+//   setOptions(benchmarkSelect, __benchmarks);
 
-  // Singlets
-  systemSelect.value = params.get("system");
-  configSelect.value = params.get("config");
-  plotTypeSelect.value = params.get("plotType");
-  xAxisSelect.value = params.get("xAxis");
-  sortTypeSelect.value = params.get("sortType");
-  if (params.get("title") === "undefined") {
-    plotTitleInput.value = "";
-  } else {
-    plotTitleInput.value = params.get("title");
-  }
-  normalizationTypeSelect.value = params.get("normalizationType");
+//   var commits = new Set(params.get("commits")); // Selected
+//   var _commits = new Set(params.get("_commits")); // Unselected
+//   var __commits = forensicsData.options.gambit.commits.forEach(o => {
+//     if (commits.has(o) && !_commits.has(o)) {
+//       return o;
+//     }
+//   })
+//   setOptions(commitSelect, __commits);
 
-  // Serialisation produces a string, which is truthy
-  if (params.get("stickyZero") === "true") {
-    stickyZeroCheckbox.checked = true;
-  } else {
-    stickyZeroCheckbox.checked = false;
-  }
+//   // Singlets
+//   systemSelect.value = params.get("system");
+//   configSelect.value = params.get("config");
+//   plotTypeSelect.value = params.get("plotType");
+//   xAxisSelect.value = params.get("xAxis");
+//   sortTypeSelect.value = params.get("sortType");
+//   if (params.get("title") === "undefined") {
+//     plotTitleInput.value = "";
+//   } else {
+//     plotTitleInput.value = params.get("title");
+//   }
+//   normalizationTypeSelect.value = params.get("normalizationType");
 
-  if (params.get("geometricMean") === "true") {
-    geometricMeanCheckbox.checked = true;
-  } else {
-    geometricMeanCheckbox.checked = false;
-  }
+//   // Serialisation produces a string, which is truthy
+//   if (params.get("stickyZero") === "true") {
+//     stickyZeroCheckbox.checked = true;
+//   } else {
+//     stickyZeroCheckbox.checked = false;
+//   }
 
-  plotState.reference = params.get("reference");
-  plotState.subtitle = params.get("subtitle");
+//   if (params.get("geometricMean") === "true") {
+//     geometricMeanCheckbox.checked = true;
+//   } else {
+//     geometricMeanCheckbox.checked = false;
+//   }
 
-  // Force recalculating data
-  updatePlotState();
-}
+//   plotState.reference = params.get("reference");
+//   plotState.subtitle = params.get("subtitle");
+
+//   // Force recalculating data
+//   updatePlotState();
+// }
 
 init('/results/forensics.json');
