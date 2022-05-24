@@ -1,6 +1,10 @@
 import argparse
 import configparser
 
+import random
+
+from numpy import nan
+
 from forensics import init_logger
 from forensics.models import *
 
@@ -48,7 +52,7 @@ def batch_insert_dirs(systems):
                     break
 
                 logger.debug(
-                    f"Processed build for {system.name}/{commit.name}/{config.name}"
+                        f"Processed build for {system.name}/{commit.name}/{config.name} (id: {build_id})"
                 )
 
                 if not os.path.exists(config.path + "/.forensics-usage"):
@@ -196,14 +200,15 @@ def insert_run_results(run_results, run_context, build_id):
     for row in df.iloc:
         data = row.to_dict()
 
+
         # TODO: Properly fill usage information. Must emit in forensics.
-        usage = Usage.get(name=ctx["usage-name"][0], system=build.system)
+        usage = Usage.get(name=str(ctx["usage-name"][0]), system=build.system)
         if usage is None:
             usage = Usage(
-                name=ctx["usage-name"][0],
+                name=str(ctx["usage-name"][0]),
                 shortname="change me",
                 description="change me",
-                setup=ctx["usage-setup"][0],
+                setup=str(ctx["usage-setup"][0]),
                 system=build.system,
             )
 

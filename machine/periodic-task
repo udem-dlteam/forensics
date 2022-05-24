@@ -476,13 +476,32 @@ add_build_as_needed()
     MAIN_BRANCHES="$MAIN_BRANCHES_COMMON"
     source "system-configs/$SYSTEM/configs/$CONFIG"
 
-    git clone "$REPO_DIR" "$CONFIG_BUILD_DIR-$$"
-    mv "$CONFIG_BUILD_DIR-$$" "$CONFIG_BUILD_DIR"
-    (cd "$CONFIG_BUILD_DIR" ; git checkout "$COMMIT_HASH")
+    get_sources
 
     add_parallel_task "$BUILD_SCRIPT_FILE"
 
     NB_TASKS_FOR_THIS_BRANCH=$(($NB_TASKS_FOR_THIS_BRANCH + 1))
+
+  fi
+}
+
+
+get_sources()
+{
+  RELEASE_DIR="`pwd`/system-releases/$SYSTEM/$COMMIT"
+
+  if test -e $RELEASE_DIR ; then
+
+    mkdir $CONFIG_BUILD_DIR-$$
+    (cd $CONFIG_BUILD_DIR-$$ ; tar zxf $RELEASE_DIR/*gz)
+    mv $CONFIG_BUILD_DIR-$$/g* $CONFIG_BUILD_DIR
+    rm -rf $CONFIG_BUILD_DIR-$$
+
+  else
+
+    git clone "$REPO_DIR" "$CONFIG_BUILD_DIR-$$"
+    mv "$CONFIG_BUILD_DIR-$$" "$CONFIG_BUILD_DIR"
+    (cd "$CONFIG_BUILD_DIR" ; git checkout "$COMMIT_HASH")
 
   fi
 }
