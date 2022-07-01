@@ -11,6 +11,7 @@
 function initPresets(opts) {
   return (() => {
     var presets = [];
+    var $system = "zipi";
 
     /* Default preset from which all presets inherit */
     function forensicsPreset(config) {
@@ -18,9 +19,9 @@ function initPresets(opts) {
 
       /* Default options are retrieved from the HTML */
       _this.name = "All commits, normalized to the latest"
-      _this.system = 'gambit';
-      _this.benchmarks = opts[_this.system].benchmarks.slice(0, 1); // First benchmark
-      _this.commits = opts[_this.system].commits; // All commits
+      _this.system = $system;
+      _this.benchmarks = opts[$system].benchmarks.slice(0, 1); // First benchmark
+      _this.commits = opts[$system].commits; // All commits
       /* Uses the first value set in index.html by default */
       _this.config = configSelect.value;
       _this.plotType = plotTypeSelect.value;
@@ -82,8 +83,8 @@ function initPresets(opts) {
     /* Custom presets go here*/
     var gambitAllReleasesPreset = new forensicsPreset({
       name: "Latest release, all benchmarks",
-      benchmarks: opts.gambit.benchmarks,
-      commits: [opts.gambit.commits[opts.gambit.commits.length - 1]],
+      benchmarks: opts[$system].benchmarks,
+      commits: [opts[$system].commits[opts[$system].commits.length - 1]],
       xAxis: "benchmark",
       plotType: "bar",
       sortType: "value-desc",

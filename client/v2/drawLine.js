@@ -13,15 +13,15 @@ function drawLine() {
   lines = Array.from(d3.group(data, d => d[plotState.ordinal]),
                      ([ordinal, values]) => ({ordinal, values}));
 
-  // Break each line into segments, keeping proper indices
-  // in order to properly color and identify each segment
+  // Break each line into segments, keeping indices in order to properly color
+  // and identify each segment
   lines.forEach((line, line_idx) => {
     var between_segments = false;
     var segments = [{color: line_idx, values: []}];
     var segment_idx = 0;
     line.values.forEach((obj, value_idx) => {
       var val = obj.mean;
-      // Null values are segment delimiters
+      // Zero values are segment delimiters
       if (val === 0) {
         // Increase segment count if not already in a segment
         if (!between_segments) {

@@ -6,6 +6,8 @@ var forensicsData = {};
 var forensicsPresets = {}; /* Exported from presets.js */
 var chart = {};
 
+var $system = "zipi";
+var $commitURL = "https://github.com/udem-dlteam/zipi/commit";
 /*
  * Elements
  */
@@ -76,14 +78,14 @@ function regressionAnalysis() {
   if (plotState.reference) {
     var now = plotState.reference;
   } else {
-    now = forensicsData.options.gambit.commits[forensicsData.options.gambit.commits.length - 1];
+    now = forensicsData.options[$system].commits[forensicsData.options[$system].commits.length - 1];
   }
   var data = forensicsData.results.filter(o => ((o.commit === then) || (o.commit === now)));
 
   // Hard copy
   data = JSON.parse(JSON.stringify(data));
 
-  forensicsData.options.gambit.benchmarks.forEach(b => {
+  forensicsData.options[$system].benchmarks.forEach(b => {
     var _then = data.filter(o => ((o.benchmark === b) && (o.commit === then)))[0];
     var _now = data.filter(o => ((o.benchmark === b) && (o.commit === now)))[0];
 
@@ -98,7 +100,7 @@ function regressionAnalysis() {
 
   // Sort data by benchmark suite into separate lists
   let _data = {};
-  forensicsData.options.gambit.benchmarkSuites.forEach(s => _data[s] = []);
+  forensicsData.options[$system].benchmarkSuites.forEach(s => _data[s] = []);
   data.forEach(o => _data[o.suite].push(o));
   // Sort and recombine the data
   plotState.data = [];
@@ -167,12 +169,12 @@ function unsetReference() {
 
 function setCommitName(commit) {
   var timestamp = forensicsData.results.filter(o => o.commit===commit)[0].timestamp;
-  var sha = forensicsData.options.gambit.commitShas[commit];
-  commitNameh4.innerHTML = `<a href="https://github.com/gambit/gambit/commit/${sha}">${commit}</a> <span>${new Date(timestamp)}</span>`;
+  var sha = forensicsData.options[$system].commitShas[commit];
+  commitNameh4.innerHTML = `<a href="${$commitURL}/${sha}">${commit}</a> <span>${new Date(timestamp)}</span>`;
 }
 
 function setCommitMessage(commit) {
-  commitMessagePre.innerHTML = forensicsData.options.gambit.commitMessages[commit].replaceAll('\\n', '<br />');
+  commitMessagePre.innerHTML = forensicsData.options[$system].commitMessages[commit].replaceAll('\\n', '<br />');
 }
 
 // Don't regen whole plot when only changing the title
@@ -224,17 +226,17 @@ function setOptions(elem, values) {
 /* Populate options with data from forensics.json */
 function populateOptions(data) {
   // TODO: loop for multiple systems
-  var gambit = data.options.gambit;
+  var system = data.options[$system];
 
   // TODO: compact_paths by feeley, see filters.js
   // Should be done when generating the JSON, otherwise
   // we need to modify data.options.gambit.benchmarks
   // and all benchmark keys in data.results.gambit.
 
-  populateSelect(['gambit'], systemSelect);
-  populateSelect(gambit.benchmarks, benchmarkSelect);
-  populateSelect(gambit.commits, commitSelect);
-  populateSelect(gambit.configs, configSelect);
+  populateSelect([$system], systemSelect);
+  populateSelect(system.benchmarks, benchmarkSelect);
+  populateSelect(system.commits, commitSelect);
+  populateSelect(system.configs, configSelect);
 
 }
 
@@ -244,6 +246,7 @@ function updatePlotState() {
 
   plotState.title = plotTitleInput.value;
   plotState.system = systemSelect.value;
+  plotState.config = configSelect.value;
   plotState.benchmarks = getSelectedOptions(benchmarkSelect);
   plotState.commits = getSelectedOptions(commitSelect);
   plotState.stickyZero = stickyZeroCheckbox.checked;
@@ -283,10 +286,11 @@ function updatePlotState() {
   })();
 
   // Produce the data consumed by d3.
+  // Returns a list of points for a particular config
   plotState.data = forensicsData.results.filter((o) => {
     var bench_idx = plotState.benchmarks.indexOf(o.benchmark);
     var commit_idx = plotState.commits.indexOf(o.commit);
-    if ((bench_idx !== -1) && (commit_idx !== -1)) {
+    if ((bench_idx !== -1) && (commit_idx !== -1) && (plotState.config === o.config)) {
       return true;
     }
     return false;
@@ -351,9 +355,14 @@ function updatePlotState() {
         median: 1
       };
 
+      // Some benchmarks might have no results. Keep track in order
+      // not to push dummy results which would have the values in obj above.
+      let nResults = 0;
+
       // Coalesce on benchmarks
       plotState.data.forEach(o => {
         if (o.commit === commit) {
+          nResults++;
           var min = o.min || 1;
           var max = o.max || 1;
           var mean = o.mean || 1;
@@ -373,14 +382,17 @@ function updatePlotState() {
         }
       })
 
-      // Take the Nth root to get the gmean
-      obj.min = Math.pow(obj.min, 1/plotState.benchmarks.length);
-      obj.max = Math.pow(obj.max, 1/plotState.benchmarks.length);
-      obj.mean = Math.pow(obj.mean, 1/plotState.benchmarks.length);
-      obj.stddev = Math.pow(obj.stddev, 1/plotState.benchmarks.length);
-      obj.median = Math.pow(obj.median, 1/plotState.benchmarks.length);
+      // Only push results if they did exist!
+      if (nResults > 0) {
+        // Take the Nth root to get the gmean
+        obj.min = Math.pow(obj.min, 1/plotState.benchmarks.length);
+        obj.max = Math.pow(obj.max, 1/plotState.benchmarks.length);
+        obj.mean = Math.pow(obj.mean, 1/plotState.benchmarks.length);
+        obj.stddev = Math.pow(obj.stddev, 1/plotState.benchmarks.length);
+        obj.median = Math.pow(obj.median, 1/plotState.benchmarks.length);
 
-      _data.push(obj);
+        _data.push(obj);
+      }
     })
 
     // Factor in the commutator to keep normalization at 1
@@ -435,7 +447,7 @@ function updatePlotState() {
   }
 
   // Set the plot subtitle
-  setPlotSubtitle(plotState.subtitle);
+  setPlotSubtitle(plotState.subtitle + "<br>" + plotState.config);
 
   if (plotState.reference) {
     setCommitName(plotState.reference);
@@ -505,7 +517,7 @@ async function init(url) {
           // TODO: Do this in Python when exporting JSON
           // Generate benchmark suites list
           let suites = {};
-          data.options.gambit.benchmarks.forEach(b => {
+          data.options[$system].benchmarks.forEach(b => {
             let parts = b.split('/');
             let nParts = parts.length;
             if (nParts === 1) {
@@ -517,7 +529,7 @@ async function init(url) {
               suites[suite] = true;
             }
           })
-          forensicsData.options.gambit.benchmarkSuites = Object.keys(suites);
+          forensicsData.options[$system].benchmarkSuites = Object.keys(suites);
 
           forensicsPresets = initPresets(data.options);
           forensicsPresets.populatePresets();
@@ -537,99 +549,5 @@ async function init(url) {
       console.log("Error during fetch - ", err);
     });
 }
-
-// TODO: Reimplement the plotState encoding algorithm
-// function plotStateToURL() {
-//   // Only keep certain attributes from the plotState object
-//   // Keeping the whole object with all data is impractical.
-//   const _plotState = (({
-//     system, benchmarks, commits, config,
-//     plotType, sortType, xAxis, title, reference,
-//     normalizationType, stickyZero, subtitle, geometricMean
-//   }) => ({
-//     system, benchmarks, commits, config,
-//     plotType, sortType, xAxis, title, reference,
-//     normalizationType, stickyZero, subtitle, geometricMean
-//   }))(plotState);
-
-//   // Make sets out of lists to quickly test for presence
-//   var commits = new Set(_plotState.commits);
-//   var benchmarks = new Set(_plotState.benchmarks);
-
-//   // Unselected commits and benchmarks
-//   _plotState._commits = forensicsData.options.gambit.commits.filter(o => {
-//     if (!commits.has(o)) {
-//       return o;
-//     }
-//   });
-
-//   _plotState._benchmarks = forensicsData.options.gambit.benchmarks.filter(o => {
-//     if (!benchmarks.has(o)) {
-//       return o;
-//     }
-//   });
-
-//   const url = new URLSearchParams(_plotState).toString();
-
-//   window.history.pushState("", "", "?"+url);
-// }
-
-// NOTE: Maybe unify this with 'applyPreset' from presets.js
-// TODO: Have global plot update lock (mutex) to prevent updates
-// on each param change?
-// function plotStateFromURL() {
-//   const params = new URLSearchParams(window.location.search);
-
-//   // Compute selected and new benchmarks
-//   var benchmarks = new Set(params.get("benchmarks")); // Selected
-//   var _benchmarks = new Set(params.get("_benchmarks")); // Unselected
-//   var __benchmarks = forensicsData.options.gambit.benchmarks.forEach(o => {
-//     if (benchmarks.has(o) && !_benchmarks.has(o)) {
-//       return o;
-//     }
-//   })
-//   setOptions(benchmarkSelect, __benchmarks);
-
-//   var commits = new Set(params.get("commits")); // Selected
-//   var _commits = new Set(params.get("_commits")); // Unselected
-//   var __commits = forensicsData.options.gambit.commits.forEach(o => {
-//     if (commits.has(o) && !_commits.has(o)) {
-//       return o;
-//     }
-//   })
-//   setOptions(commitSelect, __commits);
-
-//   // Singlets
-//   systemSelect.value = params.get("system");
-//   configSelect.value = params.get("config");
-//   plotTypeSelect.value = params.get("plotType");
-//   xAxisSelect.value = params.get("xAxis");
-//   sortTypeSelect.value = params.get("sortType");
-//   if (params.get("title") === "undefined") {
-//     plotTitleInput.value = "";
-//   } else {
-//     plotTitleInput.value = params.get("title");
-//   }
-//   normalizationTypeSelect.value = params.get("normalizationType");
-
-//   // Serialisation produces a string, which is truthy
-//   if (params.get("stickyZero") === "true") {
-//     stickyZeroCheckbox.checked = true;
-//   } else {
-//     stickyZeroCheckbox.checked = false;
-//   }
-
-//   if (params.get("geometricMean") === "true") {
-//     geometricMeanCheckbox.checked = true;
-//   } else {
-//     geometricMeanCheckbox.checked = false;
-//   }
-
-//   plotState.reference = params.get("reference");
-//   plotState.subtitle = params.get("subtitle");
-
-//   // Force recalculating data
-//   updatePlotState();
-// }
 
 init('/results/forensics.json');

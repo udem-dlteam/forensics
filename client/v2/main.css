@@ -172,6 +172,6 @@ div.tooltip {
   max-width: 80%;
 }
 
-#presets, #plot-title-div, #systems, #configs, #plot-type, #x-axis, #sort-type, #normalization-type, #y-axis-scale {
+#presets, #plot-title-div, #systems, #plot-type, #x-axis, #sort-type, #normalization-type, #y-axis-scale {
   display: none;
 }
