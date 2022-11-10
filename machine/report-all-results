@@ -22,11 +22,11 @@ if test -e "$FORENSICS_DIR/python-forensics.conf"; then
 
   $PYTHON3 -m forensics.collector --conf "$FORENSICS_DIR/python-forensics.conf" --init
 
-  $PYTHON3 -m forensics.collector --conf "$FORENSICS_DIR/python-forensics.conf" --batch "$FORENSICS_DIR/system-builds/zipi" "$FORENSICS_DIR/system-builds/cpython" "$FORENSICS_DIR/system-builds/pypy3" "$FORENSICS_DIR/system-builds/pypy2"
+  $PYTHON3 -m forensics.collector --conf "$FORENSICS_DIR/python-forensics.conf" --batch "$FORENSICS_DIR/system-builds/zipi"
 
   $PYTHON3 -m forensics.collector.export_json --conf "$FORENSICS_DIR/python-forensics.conf"
   ls -l "$FORENSICS_DIR/python-forensics.json"
-  scp python-forensics.json "forensics@gambitscheme.org:/usr/local/var/websites/forensics.gambitscheme.org/forensics.json"
+  scp python-forensics.json "forensics@gambitscheme.org:/usr/local/var/websites/zipi-forensics.gambitscheme.org/results/forensics.json"
 
 fi
 

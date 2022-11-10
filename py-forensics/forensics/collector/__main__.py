@@ -1,3 +1,4 @@
+#
 import argparse
 import configparser
 
@@ -83,7 +84,7 @@ def batch_insert_dirs(systems):
                         logger.warning(
                             f"Could not process run for {system.name}/{commit.name}/{config.name}/{usage.name}, skipping"
                         )
-                        raise e
+                        # Don't raise, continue
 
                     logger.debug(
                         f"Processed run for {system.name}/{commit.name}/{config.name}/{usage.name}"
